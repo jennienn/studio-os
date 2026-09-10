@@ -1,0 +1,9 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
