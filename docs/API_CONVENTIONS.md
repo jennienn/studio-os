@@ -104,3 +104,23 @@ Commands include version, businessCategory, businessType, all current-category c
 seven businessHours rows, bookingPolicy, and only the matching category policy.
 The opposite category policy must be null/absent. Capability dependencies and field-level role
 restrictions follow ADR-051. All mutations retain server-session CSRF protection.
+
+## 9. Phases 4–6 APIs
+
+All paths below are under `/api/v1/studios/{studioId}` and require an ACTIVE Studio.
+
+- Customers: GET/POST `/customers`, GET/PUT `/customers/{id}`, POST `/customers/{id}/archive`.
+  List: search (name or formatted/normalized phone), status ACTIVE/ARCHIVED/ALL, page, size (1–100).
+- Payments: GET/POST `/payments`, GET `/payments/{id}`, POST `/payments/{id}/confirm`, `/cancel`, `/refund`.
+  List: customerId, status, page, size. Money is a decimal JSON string, validated/stored as positive long KRW.
+- Bookings: GET/POST `/bookings`, GET/PUT `/bookings/{id}`, POST `/bookings/{id}/confirm`, `/cancel`, `/complete`, `/no-show`.
+  List: from/to ISO timestamps, status, page, size. PUT replaces only staff/time/note.
+- Blocks: GET/POST `/booking-blocks`, DELETE `/booking-blocks/{id}`. List: from/to, page, size.
+- GET `/booking-staff` returns active staff IDs/names for operator assignment, without introducing Staff management.
+- GET `/availability?staffId=...&startAt=...&endAt=...` returns advisory availability or validation errors.
+
+Payment, booking and block mutations require Idempotency-Key (1–128 ASCII letters/digits or `._:-`).
+Keys are scoped by Studio/operator/operation; request hashes include the target resource ID for resource commands.
+Same successful request replays; different payload under the same key returns 409. Failed transactions retain
+neither business changes nor a successful replay record. No key expiry/reuse is currently enabled.
+Role restrictions and manual-scope exceptions are defined by ADR-052 and SECURITY.md.

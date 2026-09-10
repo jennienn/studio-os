@@ -879,7 +879,7 @@ Name + phone 방식은 controlled pilot 범위에서만 사용한다.
 
 다음은 Phase 0 blocker가 아니며 해당 단계 전에 ADR로 확정한다.
 
-- exact PostgreSQL booking locking/constraint implementation before Phase 6
+- exact PostgreSQL booking locking/constraint implementation: resolved by ADR-052
 - production hosting provider before production deployment
 - external Kakao/SMS/Email notification provider before P1-D
 - actual PG provider before P2
@@ -1074,3 +1074,34 @@ transaction stores the entire validated configuration and changes PRE_ONBOARDING
 Studio row locking serializes writes; configuration_version rejects stale full updates (409).
 Repeated completion returns 409. Configuration rows are updated in place, never deleted
 when a capability is disabled. No Redis configuration cache or lock is required in Phase 3.
+
+## ADR-052 — Coordinated Phases 4–6 Operational Core
+Status: Accepted
+
+Confirmed by the user for the combined Customer → Payment → Common Booking scope:
+
+- Archived customers keep historical relationships. New payments/bookings are forbidden;
+  existing history, refund/cancellation and existing booking handling remain available.
+  Archive is rejected while PENDING/CONFIRMED bookings exist. The tenant/name/normalized-phone
+  duplicate boundary includes archived customers. Restoration is outside this scope.
+- OWNER/MANAGER manage customers, payments (record/read/unpaid cancellation), bookings and blocks.
+  Refund is OWNER-only. STAFF reads only assigned bookings and those customers' names/phones;
+  no internal customer memo, payment access, full customer list or mutation commands in this phase.
+  Specialized attendance/treatment completion permissions are connected in their later phases.
+- Phase 6 explicitly permits manual operator 1:1 bookings without offerings. The category-matching
+  LESSON_PRIVATE or BEAUTY_SERVICE kind is used, staff assignment is required, and LESSON_GROUP
+  creation is rejected until its domain exists. A persisted manual-flow marker and clear UI wording
+  distinguish these records from future specialized bookings. No specialized side effects execute.
+- Only PENDING/CONFIRMED bookings may change time/staff/note; customer and kind are immutable.
+  Creation/rescheduling rejects past start times and must respect Studio-local business hours.
+  bookingWindowDays, slotIntervalMinutes and cancellationCutoffHours do not restrict these operator
+  commands. Public booking and entitlement-restoration policy integration remain later-phase work.
+- Manual payments allow OTHER with null referenceId only. Create PENDING or PAID; PENDING can be
+  explicitly confirmed PAID or cancelled. Only PAID can be fully refunded. paidAt is operator supplied
+  or defaults to server time for PAID; future paidAt is rejected.
+- PostgreSQL Studio row pessimistic locking serializes booking creation, rescheduling, status commands
+  and block creation/deletion. Conflicts are re-read inside that transaction. Different staff may still
+  book the same interval. No Redis booking lock or additional PostgreSQL extension is introduced.
+
+Phase 4 tests must pass before Payment implementation; Payment tests must pass before Booking implementation.
+The task explicitly defers LessonBookingDetail, BeautyBookingDetail and all Phase 7+ domain records.

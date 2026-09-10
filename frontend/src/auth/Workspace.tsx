@@ -5,9 +5,12 @@ import { useCallback, useEffect, useState, FormEvent } from "react";
 import { api, ApiError } from "./api";
 import { ConfigurationPanel, WorkspaceMode } from "@/configuration/ConfigurationPanel";
 import { Category } from "@/configuration/model";
-type Studio={id:string;name:string;slug:string;timezone:string;status:string;role:"OWNER"|"MANAGER"|"STAFF"};
+import { CustomerPanel } from "@/operations/CustomerPanel";
+import { PaymentPanel } from "@/operations/PaymentPanel";
+import { BookingPanel } from "@/operations/BookingPanel";
+type Studio={id:string;name:string;slug:string;timezone:string;businessCategory:string;status:string;role:"OWNER"|"MANAGER"|"STAFF"};
 type Me={id:string;email:string|null;name:string;studios:Studio[];activeStudioId:string|null};
-export function Workspace({mode="home",target=null}:{mode?:WorkspaceMode;target?:Category|null}) {
+export function Workspace({mode="home",target=null,resourceId}:{mode?:WorkspaceMode;target?:Category|null;resourceId?:string}) {
   const router=useRouter();
   const [me,setMe]=useState<Me|null>(null); const [error,setError]=useState(""); const [busy,setBusy]=useState(false);
   const [name,setName]=useState(""); const [slug,setSlug]=useState(""); const [timezone,setTimezone]=useState("");
@@ -51,7 +54,11 @@ export function Workspace({mode="home",target=null}:{mode?:WorkspaceMode;target?
       {active && <section className="workspace-studio"><h2>{active.name}</h2>
         <dl><dt>사업장 주소</dt><dd>{active.slug}</dd><dt>시간대</dt><dd>{active.timezone}</dd>
           <dt>내 역할</dt><dd>{active.role==="OWNER" ? "소유자" : active.role==="MANAGER" ? "매니저" : "스태프"}</dd></dl></section>}
-      {active && !busy && <ConfigurationPanel key={active.id} studioId={active.id} mode={mode} target={target} onComplete={load}/>}
+      {active && !busy && <ConfigurationPanel key={active.id} studioId={active.id} mode={mode} target={target} onComplete={load}>
+        {mode==="customers" && <CustomerPanel key={active.id+resourceId} studioId={active.id} category={active.businessCategory} id={resourceId}/>}
+        {mode==="payments" && <PaymentPanel key={active.id+resourceId} studioId={active.id} category={active.businessCategory} role={active.role} id={resourceId}/>}
+        {mode==="bookings" && <BookingPanel key={active.id} studioId={active.id} category={active.businessCategory} timezone={active.timezone} role={active.role}/>}
+      </ConfigurationPanel>}
       <details open={me.studios.length===0}><summary>{me.studios.length===0 ? "첫 사업장 만들기" : "새 사업장 만들기"}</summary>
         <form className="auth-form" onSubmit={create}>
           <label>사업장 이름<input required maxLength={100} value={name} onChange={e=>setName(e.target.value)}/></label>

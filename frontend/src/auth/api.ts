@@ -8,12 +8,13 @@ async function decode<T>(response: Response): Promise<T> {
   }
   return response.status === 204 ? undefined as T : response.json();
 }
-export async function api<T>(path: string, body?: unknown, method?: "POST"|"PUT"): Promise<T> {
+export async function api<T>(path: string, body?: unknown, method?: "POST"|"PUT"|"DELETE", idempotencyKey?:string): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) {
     const token = await decode<{headerName: string; token: string}>(await fetch("/api/v1/auth/csrf", { credentials: "include", cache: "no-store" }));
     headers[token.headerName] = token.token;
     headers["Content-Type"] = "application/json";
+    if(idempotencyKey) headers["Idempotency-Key"]=idempotencyKey;
   }
   return decode<T>(await fetch("/api/v1" + path, {
     method: body === undefined ? "GET" : method ?? "POST", headers,

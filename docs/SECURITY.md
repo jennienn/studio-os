@@ -86,6 +86,13 @@ LessonPolicy.expiryAlertDays, LessonPolicy.restoreOnTimelyCancellation and
 BeautyPolicy.noShowEnabled. STAFF has no Phase 3 configuration write permission.
 The backend compares structural fields with persisted values; hidden controls alone are not authorization.
 
+### Phases 4–6 operational permissions (ADR-052)
+
+OWNER/MANAGER may manage customers, record/read/confirm/cancel unpaid payments, and manage bookings/blocks.
+Full refund is OWNER-only. STAFF can only read their assigned bookings and the associated customer's
+name/phone. STAFF cannot access customer memo, payment records, full customer lists or mutation commands
+in these phases. All operational APIs require an ACTIVE Studio and active membership.
+
 ---
 
 ## 4. Authentication

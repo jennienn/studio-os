@@ -2,7 +2,8 @@
 
 # Development Roadmap
 
-각 Phase는 별도의 Codex task로 진행한다.
+각 Phase는 기본적으로 별도의 Codex task로 진행한다. 사용자 승인으로 Phase 4–6은 ADR-052의
+하나의 작업 범위에서 Customer 테스트 → Payment 테스트 → Booking 테스트 순서로 진행한다.
 
 ```text
 Plan
@@ -153,6 +154,9 @@ No PG.
 ---
 
 ## Phase 6 — Common Booking Engine
+
+현재 작업 범위는 ADR-052를 따른다. 아래 전문 detail 및 group capacity 통합은 해당
+Phase 7–9 도메인이 생긴 후 연결하며, Phase 6에서 관련 가짜 레코드를 만들지 않는다.
 
 Implement:
 - Booking

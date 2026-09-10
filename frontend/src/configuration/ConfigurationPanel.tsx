@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, FormEvent } from "react";
+import { useCallback, useEffect, useState, FormEvent, ReactNode } from "react";
 import { api, ApiError } from "@/auth/api";
 import { Category, ConfigurationView, Draft, initialDraft, chooseCategory, configurationRoute, categoryLabels } from "./model";
 import { ConfigurationFields } from "./ConfigurationFields";
 import { ConfigurationSummary } from "./ConfigurationSummary";
 
-export type WorkspaceMode="home"|"onboarding"|"settings"|"guard";
-export function ConfigurationPanel({studioId,mode,target=null,onComplete}:{studioId:string;mode:WorkspaceMode;target?:Category|null;onComplete:()=>Promise<void>}) {
+export type WorkspaceMode="home"|"onboarding"|"settings"|"guard"|"customers"|"payments"|"bookings";
+export function ConfigurationPanel({studioId,mode,target=null,onComplete,children}:{studioId:string;mode:WorkspaceMode;target?:Category|null;onComplete:()=>Promise<void>;children?:ReactNode}) {
   const router=useRouter();
   const [view,setView]=useState<ConfigurationView|null>(null);
   const [draft,setDraft]=useState<Draft|null>(null);
@@ -59,9 +59,13 @@ export function ConfigurationPanel({studioId,mode,target=null,onComplete}:{studi
   return <section className="configuration-panel">
     {view.status==="ACTIVE" && <>
       <p className="configuration-category" data-testid="active-category">{categoryLabels[view.businessCategory!]} · ACTIVE</p>
-      <nav aria-label="사업장 메뉴"><Link href="/app" aria-current={mode==="home"?"page":undefined}>홈</Link><Link href="/app/settings" aria-current={mode==="settings"?"page":undefined}>설정</Link></nav>
+      <nav aria-label="사업장 메뉴"><Link href="/app" aria-current={mode==="home"?"page":undefined}>홈</Link>
+        {view.permissions.editPolicies && <Link href="/app/customers" aria-current={mode==="customers"?"page":undefined}>{view.businessCategory==="LESSON"?"회원":"고객"}</Link>}
+        {view.permissions.editPolicies && <Link href="/app/payments" aria-current={mode==="payments"?"page":undefined}>결제</Link>}
+        <Link href="/app/bookings" aria-current={mode==="bookings"?"page":undefined}>예약</Link>
+        <Link href="/app/settings" aria-current={mode==="settings"?"page":undefined}>설정</Link></nav>
     </>}
-    {mode==="home" ? <><h2>사업장 설정 완료</h2><p>운영 설정이 저장되었습니다. 실제 업무 기능은 이후 단계에서 제공됩니다.</p><ConfigurationSummary draft={draft}/></> :
+    {mode==="bookings" ? children : mode==="customers" || mode==="payments" ? (view.permissions.editPolicies?children:<p role="alert">이 화면에 접근할 권한이 없습니다.</p>) : mode==="home" ? <><h2>사업장 설정 완료</h2><p>위 메뉴에서 운영 업무를 시작하거나 설정을 확인할 수 있습니다.</p><ConfigurationSummary draft={draft}/></> :
       <form onSubmit={submit} className="configuration-form">
         <h2>{mode==="onboarding" ? "사업장 시작하기" : "사업장 설정"}</h2>
         {mode==="onboarding" ? <>

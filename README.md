@@ -46,8 +46,9 @@ studio-saas/
 
 The landing design is preserved under `frontend/`. Phase 2 implements real operator
 authentication, Studio membership and default Staff creation. Phase 3 adds category-safe
-onboarding and persistent configuration through Flyway V2. Customer/booking/payment/lesson/beauty
-operations remain unimplemented. Flyway V1 remains the identity and tenant foundation.
+onboarding and persistent configuration through Flyway V2. Phases 4–6 add Customer, manual
+Payment and common manual 1:1 Booking operations through Flyway V3–V5. Specialized lesson
+and beauty operations remain outside this scope. Flyway V1 remains the identity and tenant foundation.
 
 ### Requirements
 
@@ -139,10 +140,12 @@ cd backend
 ```
 
 They cover Spring context startup, PostgreSQL connectivity, Flyway validation and
-the exact Phase 3 schema, Redis/session round-trip, public health privacy, authentication,
+the exact Phase 6 schema, Redis/session round-trip, public health privacy, authentication,
 token expiry/replay, session revocation, OAuth identity isolation, CSRF, tenant authorization
 and atomic Studio creation/onboarding, configuration role restrictions, category dependencies
-and concurrent configuration writes.
+and concurrent configuration writes. Operational tests cover customer archival, payment state
+transitions and refunds, tenant isolation, booking/block conflicts, idempotent retries and rollback,
+including concurrent booking, block, archive and refund commands.
 
 ```sh
 cd frontend
@@ -160,7 +163,8 @@ Both ports must be free; existing servers are never reused. Build with the defau
 `BACKEND_BASE_URL=http://127.0.0.1:8080`. The tests cover desktop/mobile signup, local
 verification delivery, login, Studio creation, password reset, session revocation, logout,
 both category onboarding flows, configuration reload/update, route guards, landing previews
-and the demo gate. They never use the Compose database or real OAuth.
+and the demo gate, plus customer, payment/refund, manual booking and time-block flows in both
+categories. They never use the Compose database or real OAuth.
 Test mail is written to ignored `backend/.local-mail/e2e/`. No external email is sent.
 
 From the root after filling `.env`:
@@ -171,7 +175,17 @@ docker compose config --quiet
 
 Historical screenshots and manual prototype verification in `artifacts/` describe the
 old prototype, not the production acceptance suite. Authoritative product requirements
-remain under `docs/`; operational business features from Phase 4 onward are not implemented.
+remain under `docs/`; specialized features from Phase 7 onward are not implemented.
+
+### Customer, payment and booking operations
+
+After onboarding, OWNER/MANAGER can use `/app/customers`, `/app/payments` and `/app/bookings`.
+Only OWNER can record a full refund. STAFF sees only assigned bookings and their customer names
+and phone numbers, without mutation controls, customer notes or payment access.
+Customer archival preserves history and is rejected while pending/confirmed bookings exist.
+Payment records are manual KRW records, not payment-provider transactions. Current bookings
+are explicitly marked manual 1:1 entries without a pass or beauty service; times use the Studio
+timezone. See `docs/API_CONVENTIONS.md` for API routes and required idempotency headers.
 
 
 ## Phase 2 authentication setup

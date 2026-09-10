@@ -97,3 +97,17 @@ questions and summary wording, draft reset, role-disabled fields and route decis
 Playwright configuration.spec.ts uses real signup/verification/login and disposable databases
 for LESSON and BEAUTY on desktop/mobile, including completion, reload, settings persistence
 and incompatible route redirects. Future business operations are outside this suite's Phase 3 scope.
+
+## 8. Phases 4–6 verification
+
+Step A: CustomerIntegrationTest + KoreanPhoneTest, customer.test.tsx.
+Step B: PaymentIntegrationTest (including concurrent refund and rollback), payment.test.tsx and Customer regressions.
+Step C: BookingIntegrationTest, booking.test.tsx, then the entire backend/frontend/E2E suite.
+
+Booking tests cover time/hours/timezone, block scopes, state machine, STAFF privacy, tenant references,
+idempotency replay/reauthorization/rollback, archival guards, rescheduling and released occupancy.
+Concurrent tests include conflicting bookings, same-key booking retries, booking-vs-block creation,
+customer-archive-vs-booking creation, and payment full refunds. Actual PostgreSQL Testcontainers are used.
+The operations Playwright flow runs for both categories on desktop/mobile using real local-auth sessions,
+Customer CRUD/archive/search, payment/refund, booking conflict/cancel/complete/no-show and block creation/removal.
+Specialized booking side effects remain explicitly out of scope.

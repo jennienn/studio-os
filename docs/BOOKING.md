@@ -2,6 +2,33 @@
 
 # Booking Domain Specification
 
+## Current Phase 6 manual scope (ADR-052)
+
+The operator may create a clearly marked manual 1:1 booking without an offering in this phase.
+`manual_entry=true`, `source=OPERATOR`; kind matches the Studio category, staff is required,
+and the default OWNER Staff is available. LESSON_PRIVATE creation requires PRIVATE_LESSON enabled.
+LESSON_GROUP and all specialized detail/eligibility/side-effect implementations remain deferred.
+The regular creation status stays CONFIRMED (ADR-016); PENDING is retained in the state machine.
+Existing manual records remain distinguishable when specialized bookings are introduced.
+
+Only PENDING/CONFIRMED records may change time, staff or note; customer/kind do not change.
+Create/reschedule rejects past starts and validates Studio-local hours. The three BookingPolicy
+fields do not restrict these operator commands; future public/entitlement flows apply their policies.
+Terminal commands only change common status and never perform pass, treatment, deposit or revisit effects.
+Common commands reject non-manual records, so future specialization cannot silently skip its rules.
+
+Every booking/block mutation locks the Studio row first in a READ COMMITTED PostgreSQL transaction.
+Then it rechecks occupancy and writes the resource plus successful idempotency result atomically.
+Customer archival uses the same lock and rejects PENDING/CONFIRMED bookings. Both occupying statuses
+also prevent overlapping block creation. Different staff may occupy the same interval, and adjacent
+half-open intervals do not overlap. Future GROUP capacity is excluded from 1:1 occupancy queries/indexes.
+There is no Redis booking lock or extension dependency; direct SQL outside this protocol is not an API.
+Availability is an advisory read; creation/rescheduling always rechecks inside the write transaction.
+
+STAFF sees assigned bookings and customer name/phone only; booking note and internal customer memo are excluded.
+Successful operator command results are retained without automatic expiry or key reuse in this implementation.
+Any future replay retention/cleanup policy must be specified before enabling expiry.
+
 ## 1. Goal
 
 LESSON과 BEAUTY가 하나의 예약 엔진을 공유한다.

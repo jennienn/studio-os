@@ -2,6 +2,16 @@
 
 # Payment Domain Specification
 
+## Current Phase 5 manual scope (ADR-052)
+
+OWNER/MANAGER may record PENDING or PAID, confirm PENDING as PAID, or cancel PENDING.
+Only OWNER refunds PAID in full with a required reason. No arbitrary status edits are exposed.
+Current references are OTHER with null referenceId. Future associations below are deferred.
+paidAt for PAID is supplied or defaults to server time; future values are rejected.
+Archived customers cannot receive new payment records; existing records/history are retained.
+JSON amount fields are exact decimal strings; persistence and backend arithmetic use long/BIGINT KRW.
+All payment mutations require an Idempotency-Key; replay authorization is checked before returning a stored result.
+
 ## 1. MVP Scope
 
 MVP에서는 실제 PG 결제를 처리하지 않는다.
@@ -198,4 +208,3 @@ cycle already COMPLETED or EXPIRED
 ```
 
 MVP에서는 사용분 차감 후 부분 환불, 비례 환불, 과거 completed cycle 환불을 자동 계산하지 않는다. 해당 기능은 P1+ 별도 정책/ADR 대상이다.
-

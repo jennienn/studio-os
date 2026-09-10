@@ -124,6 +124,13 @@ Indexes:
 (studio_id, name)
 ```
 
+Phase 4 Customer implementation: ACTIVE/ARCHIVED, non-destructive archive, UNIQUE(studio_id,
+normalized_phone,name) including archived rows. Names are trimmed (100 characters), phone
+input is at most 32 characters, and internal memo is at most 2000 characters. Matching strips
+spaces/hyphens and accepts domestic 0-prefixed numeric values of 9–11 digits; no international
+conversion or phone ownership verification is performed. Composite UNIQUE(studio_id,id)
+supports tenant-safe foreign keys from payments/bookings. See ADR-052 for archive restrictions.
+
 ## 7. StudioCapability
 ```text
 StudioCapability
@@ -217,7 +224,13 @@ OPERATOR
 CUSTOMER_PORTAL
 ```
 
+Phase 6 adds `Booking.manual_entry BOOLEAN NOT NULL` to distinguish offering-free manual operator
+records from future specialized records. Manual entries require non-null staff, a 1:1 kind and OPERATOR
+source. Booking/customer/staff references use composite tenant foreign keys. Interval and scope CHECKs
+protect row integrity; Studio row locking plus transaction rechecks enforce cross-row occupancy (ADR-052).
+
 ## 13. BookingBlock
+
 ```text
 BookingBlock
 - id UUID PK
@@ -314,6 +327,13 @@ PaymentRefund
 ```
 
 MVP full refund only.
+
+Phase 5 implementation: Payment and PaymentRefund reference their parent with composite
+tenant foreign keys. UNIQUE(studio_id,payment_id) limits full refunds to one per payment.
+Monetary columns are BIGINT; JSON amounts use decimal strings to preserve long precision in browsers.
+The current API only accepts OTHER/null references. Successful operator idempotency results
+are stored transactionally, without expiry/key reuse or cleanup (expires_at remains null).
+Future retention/cleanup needs an explicit replay-window decision before being enabled.
 
 ## 18. Notification
 ```text

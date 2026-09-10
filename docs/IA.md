@@ -95,6 +95,15 @@ Preview segmented switch:
 
 /onboarding은 인증된 운영자의 현재 PRE_ONBOARDING Studio를 설정하는 화면이다.
 ACTIVE Studio는 /app으로 이동한다. PRE_ONBOARDING의 /app 및 하위 경로는 /onboarding으로 이동한다.
-현재 구현된 ACTIVE 메뉴는 홈(/app)과 설정(/app/settings)뿐이다. §§3–4의 후속 업무 메뉴는 숨긴다.
+Phase 3 시점의 ACTIVE 메뉴는 홈(/app)과 설정(/app/settings)이었다. 현재 Phase 4–6 메뉴는 §8을 따른다.
 상대 category의 /app/lesson/* 또는 /app/beauty/* 직접 접근은 /app으로 이동한다.
 아직 구현되지 않은 다른 /app 하위 업무 경로도 /app으로 이동하며 가짜 업무 화면을 제공하지 않는다.
+
+## 8. Phases 4–6 routes
+
+OWNER/MANAGER: 홈, 회원(LESSON)/고객(BEAUTY), 결제, 예약, 설정.
+STAFF: 홈, 배정된 예약, 조회용 설정. 고객 전체 목록과 결제 화면은 접근을 거부한다.
+/app/customers, /app/customers/new, /app/customers/{id}는 공통 Customer 화면이다.
+/app/payments, /app/payments/new, /app/payments/{id}는 수동 결제 및 이력 화면이다.
+/app/bookings는 Studio 시간대 기준 날짜 선택/주간 탐색/당일 목록, 수동 예약과 차단 화면이다.
+전문 이용권·출석·시술·예약금 메뉴와 대시보드 지표는 추가하지 않는다.

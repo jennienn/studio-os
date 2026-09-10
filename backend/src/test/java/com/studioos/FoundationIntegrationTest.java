@@ -59,7 +59,8 @@ class FoundationIntegrationTest {
         assertThat(jdbc.queryForList("select tablename from pg_tables where schemaname = 'public'", String.class))
                 .containsExactlyInAnyOrder("flyway_schema_history", "users", "auth_accounts", "studios",
                     "studio_memberships", "staff", "email_verification_tokens", "password_reset_tokens",
-                    "studio_capabilities", "business_hours", "booking_policies", "lesson_policies", "beauty_policies");
+                    "studio_capabilities", "business_hours", "booking_policies", "lesson_policies", "beauty_policies", "customers",
+                    "payments", "payment_refunds", "idempotency_records", "bookings", "booking_blocks");
     }
 
     @Test void redisAndServerSessionRoundTrip() {

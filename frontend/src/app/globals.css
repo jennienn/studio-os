@@ -2362,6 +2362,22 @@ button:disabled {
 .configuration-summary dt { color: #696477; }
 .configuration-summary dd { margin: 0; overflow-wrap: anywhere; }
 .configuration-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.configuration-panel nav { flex-wrap: wrap; }
+.operations-panel { margin: 28px 0; }
+.operations-filters { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin: 24px 0; }
+.operations-filters label { display: grid; gap: 8px; }
+.operations-filters input, .operations-panel textarea { padding: 12px; border: 1px solid #dedbe8; border-radius: 10px; font: inherit; width: 100%; }
+.operations-panel textarea { min-height: 120px; resize: vertical; }
+.operations-list { list-style: none; padding: 0; margin: 20px 0; }
+.operations-list li { display: flex; gap: 16px; justify-content: space-between; flex-wrap: wrap; padding: 16px 0; border-bottom: 1px solid #e8e4ef; }
+.operations-list a { color: #68439c; font-weight: 600; }
+.operations-detail { display: grid; grid-template-columns: 100px 1fr; gap: 12px; margin: 24px 0; }
+.operations-detail dd { margin: 0; overflow-wrap: anywhere; }
+.booking-week { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; margin: 20px 0; }
+.booking-week .button { padding: 10px 4px; min-width: 0; font-size: 12px; }
+.booking-item { border: 1px solid #e8e4ef; border-radius: 12px; padding: 18px; margin: 14px 0; }
+.operations-panel select, .operations-panel input[type="date"] { padding: 10px; border: 1px solid #dedbe8; border-radius: 8px; max-width: 100%; background: white; font: inherit; }
+.operations-panel fieldset { border: 0; min-width: 0; padding: 0; display: grid; gap: 12px; }
 @media (max-width: 480px) {
   .configuration-form { padding: 18px; }
   .configuration-summary dl { grid-template-columns: 1fr; gap: 6px; }
