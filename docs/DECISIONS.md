@@ -1049,3 +1049,28 @@ Such a Studio has status `PRE_ONBOARDING`, with both `business_category` and
 Studio, OWNER membership and the owner's default Staff are created in one transaction.
 This is an incomplete setup state, not completed business onboarding under ADR-001.
 Phase 3 owns the migration and validated transition to a configured category/subtype.
+
+## ADR-051 — Phase 3 Configuration Ownership and Dependencies
+Status: Accepted
+
+Confirmed by the user during Phase 3:
+
+- After onboarding, businessCategory is immutable through ordinary configuration.
+- Only OWNER may change businessType, and only within the current businessCategory.
+  A subtype change does not delete or migrate historical data; no automatic migration is implemented.
+- Initial onboarding and structural configuration (category, subtype, capabilities) are OWNER-only.
+- MANAGER may modify BusinessHours, BookingPolicy, all LessonPolicy operational values,
+  and BeautyPolicy.noShowEnabled. STAFF may read but cannot modify Phase 3 configuration.
+- BEAUTY DEPOSIT capability and BeautyPolicy.depositEnabled must always agree.
+  Only OWNER may change either value, in the same validated update.
+- ACTIVE LESSON requires PASS_MANAGEMENT and at least one of PRIVATE_LESSON/GROUP_CLASS.
+- ATTENDANCE requires GROUP_CLASS. GROUP_CLASS can be disabled only if ATTENDANCE is
+  also disabled in the same validated update. CUSTOMER_BOOKING is independently optional.
+- Later lesson phases must allow ATTENDANCE_PRESENT only with both GROUP_CLASS and
+  ATTENDANCE enabled. Phase 3 does not create PassProduct or implement deduction.
+
+Implementation: onboarding uses browser form memory until final submit. A PostgreSQL
+transaction stores the entire validated configuration and changes PRE_ONBOARDING to ACTIVE.
+Studio row locking serializes writes; configuration_version rejects stale full updates (409).
+Repeated completion returns 409. Configuration rows are updated in place, never deleted
+when a capability is disabled. No Redis configuration cache or lock is required in Phase 3.

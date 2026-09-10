@@ -14,10 +14,12 @@ export function ConfigFields({
   step,
   c,
   set,
+  lockCategory = false,
 }: {
   step: number;
   c: Config;
   set: (c: Config) => void;
+  lockCategory?: boolean;
 }) {
   const field = (key: keyof Config, label: string, options?: string[]) => (
     <label className="config-field" key={key}>
@@ -89,7 +91,7 @@ export function ConfigFields({
     <div className="config-fields">
       {step === 1 && (
         <>
-          <div className="select-card-grid two">
+          {!lockCategory && <div className="select-card-grid two">
             {[
               [
                 "lesson",
@@ -113,7 +115,7 @@ export function ConfigFields({
                 <span>{desc}</span>
               </button>
             ))}
-          </div>
+          </div>}
           <p className="muted">
             선택한 사업장 유형의 화면을 미리 확인합니다.
           </p>

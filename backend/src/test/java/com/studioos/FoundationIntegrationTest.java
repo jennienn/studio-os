@@ -58,7 +58,8 @@ class FoundationIntegrationTest {
         assertThat(flyway.info().pending()).isEmpty();
         assertThat(jdbc.queryForList("select tablename from pg_tables where schemaname = 'public'", String.class))
                 .containsExactlyInAnyOrder("flyway_schema_history", "users", "auth_accounts", "studios",
-                    "studio_memberships", "staff", "email_verification_tokens", "password_reset_tokens");
+                    "studio_memberships", "staff", "email_verification_tokens", "password_reset_tokens",
+                    "studio_capabilities", "business_hours", "booking_policies", "lesson_policies", "beauty_policies");
     }
 
     @Test void redisAndServerSessionRoundTrip() {

@@ -55,6 +55,9 @@ Backend에서도 category/subtype 조합을 검증한다.
 온보딩 완료 후 ordinary settings에서 `LESSON ↔ BEAUTY` 변경은 금지한다.
 향후 별도 migration 기능에서만 지원한다.
 
+OWNER는 현재 category 안에서만 businessType을 변경할 수 있다 (ADR-051).
+세부 업종 변경은 과거 데이터의 삭제나 자동 migration을 수행하지 않는다.
+
 ---
 
 ## 4. Common Core
@@ -121,6 +124,15 @@ Customer와 User를 합치지 않는다.
 Category는 기능의 최대 boundary를 결정한다.
 Capabilities는 category 내부 기능만 활성화/비활성화한다.
 Capability로 다른 category domain을 활성화할 수 없다.
+
+Phase 3 allowlist (ADR-051):
+- LESSON: PRIVATE_LESSON, GROUP_CLASS, ATTENDANCE, CUSTOMER_BOOKING, PASS_MANAGEMENT
+- BEAUTY: CUSTOMER_BOOKING, DEPOSIT, REVISIT
+
+ACTIVE LESSON은 PASS_MANAGEMENT 필수이며 PRIVATE_LESSON 또는 GROUP_CLASS가 하나 이상 켜져야 한다.
+ATTENDANCE는 GROUP_CLASS가 켜져 있을 때만 허용한다. 두 기능을 같은 설정 요청에서 함께 끄는 것은 가능하다.
+CUSTOMER_BOOKING은 독립적으로 선택 가능하다. BEAUTY의 DEPOSIT와 BeautyPolicy.depositEnabled는 항상 같다.
+후속 LESSON 구현에서 ATTENDANCE_PRESENT는 GROUP_CLASS와 ATTENDANCE가 모두 켜진 경우에만 허용한다.
 
 ---
 

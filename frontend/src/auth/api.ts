@@ -8,7 +8,7 @@ async function decode<T>(response: Response): Promise<T> {
   }
   return response.status === 204 ? undefined as T : response.json();
 }
-export async function api<T>(path: string, body?: unknown): Promise<T> {
+export async function api<T>(path: string, body?: unknown, method?: "POST"|"PUT"): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) {
     const token = await decode<{headerName: string; token: string}>(await fetch("/api/v1/auth/csrf", { credentials: "include", cache: "no-store" }));
@@ -16,7 +16,7 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
     headers["Content-Type"] = "application/json";
   }
   return decode<T>(await fetch("/api/v1" + path, {
-    method: body === undefined ? "GET" : "POST", headers,
+    method: body === undefined ? "GET" : method ?? "POST", headers,
     credentials: "include", cache: "no-store",
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   }));

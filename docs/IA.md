@@ -90,3 +90,11 @@ Preview segmented switch:
 - 뷰티 / 예약샵
 
 이 switch는 랜딩 데모용이며 실제 로그인 Studio category를 변경하지 않는다.
+
+## 7. Phase 3 routes
+
+/onboarding은 인증된 운영자의 현재 PRE_ONBOARDING Studio를 설정하는 화면이다.
+ACTIVE Studio는 /app으로 이동한다. PRE_ONBOARDING의 /app 및 하위 경로는 /onboarding으로 이동한다.
+현재 구현된 ACTIVE 메뉴는 홈(/app)과 설정(/app/settings)뿐이다. §§3–4의 후속 업무 메뉴는 숨긴다.
+상대 category의 /app/lesson/* 또는 /app/beauty/* 직접 접근은 /app으로 이동한다.
+아직 구현되지 않은 다른 /app 하위 업무 경로도 /app으로 이동하며 가짜 업무 화면을 제공하지 않는다.

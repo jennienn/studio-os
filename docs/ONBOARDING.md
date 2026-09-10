@@ -35,6 +35,9 @@
 
 ## 4. LESSON flow
 
+아래 §§4–6은 전체 MVP 목표 흐름이다. 현재 Phase 3 구현 범위와 저장 결과는 §8을 따른다.
+초기 상품/반/서비스 및 차감 시점 설정은 해당 도메인이 구현되는 후속 Phase로 미룬다.
+
 1. 사업장 형태
 2. 세부 업종
 3. 수업 형태
@@ -99,3 +102,27 @@ initial products/classes/services
 설정 화면에서 운영 방식 변경 가능해야 한다.
 
 단 category 변경은 데이터 영향이 크므로 MVP에서는 일반 설정으로 제공하지 않고 별도 migration flow로 제한한다.
+
+OWNER만 현재 category 안에서 businessType을 변경할 수 있으며 과거 데이터는 삭제/자동 migration하지 않는다.
+구조 설정과 기능 활성화는 OWNER-only다. MANAGER는 영업시간, 예약 정책, 레슨 정책,
+뷰티 노쇼 설정만 수정할 수 있다. STAFF는 조회만 가능하다 (ADR-051, SECURITY.md).
+
+## 8. Phase 3 flow and persistence
+
+6단계: category → 해당 subtype → 기능 → 영업시간 → 예약/업종별 정책 → 요약/완료.
+초안은 브라우저 폼 메모리에만 유지하며, 새로고침하면 미저장 초안은 초기화된다.
+OWNER의 최종 제출에서 backend가 전체 설정을 검증하고 하나의 transaction으로 저장한다.
+실패하면 PRE_ONBOARDING을 유지하며, 성공하면 ACTIVE로 전환한다. 반복 완료는 409다.
+
+저장: Studio.category/type, StudioCapability, BusinessHours, BookingPolicy 및 LessonPolicy OR BeautyPolicy.
+각 요일(월요일 1~일요일 7)에 한 행, 영업일은 시작 < 종료, 휴무일은 시간이 필요 없다.
+예약 기본값은 BOOKING.md의 30분 간격 / 30일 / 취소 12시간 전이다.
+레슨 알림 기준 및 취소 복구, 뷰티 노쇼 정책은 사용자가 명시적으로 선택한다.
+
+LESSON은 PASS_MANAGEMENT가 필수다. PRIVATE_LESSON/GROUP_CLASS 중 하나 이상이 필요하며,
+ATTENDANCE는 GROUP_CLASS가 켜져 있을 때만 허용한다. CUSTOMER_BOOKING은 선택 사항이다.
+BEAUTY는 CUSTOMER_BOOKING/DEPOSIT/REVISIT만 선택하며 DEPOSIT와 depositEnabled는 항상 함께 변경한다.
+상품·반·시술·예약·결제 등 업무 레코드는 Phase 3에서 생성하지 않는다.
+
+완료 후 /app에서 저장된 설정을 확인하고 /app/settings에서 권한에 맞게 수정한다.
+수정은 전체 설정과 version을 보내며, 다른 변경으로 version이 달라졌으면 최신 설정을 다시 불러온다.

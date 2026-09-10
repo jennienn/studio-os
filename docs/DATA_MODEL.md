@@ -46,6 +46,7 @@ Studio
 - slug VARCHAR NOT NULL
 - business_category
 - business_type
+- configuration_version BIGINT NOT NULL DEFAULT 0 (Phase 3 stale-update guard)
 - timezone
 - status
 - created_at
@@ -58,6 +59,11 @@ UNIQUE(slug)
 ```
 
 `slug`는 globally unique public tenant identifier다.
+
+Phase 3: PRE_ONBOARDING은 category/type이 모두 null이고 ACTIVE는 유효한 category/type 조합이 필수다.
+configuration_version은 설정 쓰기 transaction마다 증가하며 Studio 행 잠금과 함께 동시 변경을 보호한다.
+설정 5개 테이블은 studio_id FK를 가지며 capability/day uniqueness 및 policy 값 CHECK를 사용한다.
+category 간 capability/policy 제약은 backend가 강제한다 (ADR-051).
 
 ## 4. StudioMembership
 ```text

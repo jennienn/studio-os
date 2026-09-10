@@ -45,9 +45,9 @@ studio-saas/
 ## Operator identity and repository foundation
 
 The landing design is preserved under `frontend/`. Phase 2 implements real operator
-authentication, Studio membership and default Staff creation. Business onboarding and
-customer/booking/payment/lesson/beauty operations are not implemented. Flyway V1 creates
-only identity, token, Studio, membership and Staff tables.
+authentication, Studio membership and default Staff creation. Phase 3 adds category-safe
+onboarding and persistent configuration through Flyway V2. Customer/booking/payment/lesson/beauty
+operations remain unimplemented. Flyway V1 remains the identity and tenant foundation.
 
 ### Requirements
 
@@ -111,7 +111,9 @@ npm run dev
 ```
 
 Visit `http://localhost:3000`. `/signup`, `/login`, verification/reset screens and `/app`
-use real backend sessions. Legacy business prototype routes remain behind the demo gate.
+use real backend sessions. After Studio creation, `/onboarding` collects and saves its
+configuration. Completion opens `/app`; `/app/settings` edits the saved configuration
+according to OWNER/MANAGER/STAFF permissions. Legacy business prototype routes remain behind the demo gate.
 
 Optional, local visual preview only:
 
@@ -137,9 +139,10 @@ cd backend
 ```
 
 They cover Spring context startup, PostgreSQL connectivity, Flyway validation and
-the exact Phase 2 schema, Redis/session round-trip, public health privacy, authentication,
+the exact Phase 3 schema, Redis/session round-trip, public health privacy, authentication,
 token expiry/replay, session revocation, OAuth identity isolation, CSRF, tenant authorization
-and atomic Studio creation.
+and atomic Studio creation/onboarding, configuration role restrictions, category dependencies
+and concurrent configuration writes.
 
 ```sh
 cd frontend
@@ -156,7 +159,8 @@ with JDK 21 selected and Docker running. Playwright starts a test-only Spring se
 Both ports must be free; existing servers are never reused. Build with the default
 `BACKEND_BASE_URL=http://127.0.0.1:8080`. The tests cover desktop/mobile signup, local
 verification delivery, login, Studio creation, password reset, session revocation, logout,
-landing previews and the demo gate. They never use the Compose database or real OAuth.
+both category onboarding flows, configuration reload/update, route guards, landing previews
+and the demo gate. They never use the Compose database or real OAuth.
 Test mail is written to ignored `backend/.local-mail/e2e/`. No external email is sent.
 
 From the root after filling `.env`:
@@ -167,7 +171,7 @@ docker compose config --quiet
 
 Historical screenshots and manual prototype verification in `artifacts/` describe the
 old prototype, not the production acceptance suite. Authoritative product requirements
-remain under `docs/`; Phase 3 and later business features are not implemented.
+remain under `docs/`; operational business features from Phase 4 onward are not implemented.
 
 
 ## Phase 2 authentication setup
@@ -248,7 +252,8 @@ provider-console consent/callback settings.
 in `PRE_ONBOARDING` with no category/type (ADR-050). Creation atomically inserts Studio,
 OWNER membership and default Staff. Slugs normalize to lower case and accept 3–63 ASCII
 letters/digits with single internal hyphens. Database collisions return 409; clients choose
-another slug. Timezones must be recognized IANA zone IDs. No category inputs or metrics exist.
+another slug. Timezones must be recognized IANA zone IDs. Category is selected in the subsequent
+Phase 3 onboarding flow, not in Studio creation. No operational metrics are fabricated.
 
 Active Studio selection is stored in the server session, revalidated against active
 memberships, and automatically chosen when exactly one membership exists. Services obtain

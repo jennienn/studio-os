@@ -53,7 +53,7 @@ function Settings({
               <h2>{s}</h2>
               <p>변경한 설정은 저장 후 적용됩니다.</p>
             </div>
-            <ConfigFields step={i + 1} c={c} set={set} />
+            <ConfigFields step={i + 1} c={c} set={set} lockCategory />
           </section>
         ))}
         <section className="panel settings-section">

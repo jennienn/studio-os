@@ -75,6 +75,17 @@ PortalSession must never grant operator permissions.
 
 Granular staff permission customization is P1.
 
+### Phase 3 configuration permissions (ADR-051)
+
+All active members may read their Studio configuration. Initial onboarding is OWNER-only.
+Only OWNER may change businessType within the existing category, enable/disable capabilities,
+or change DEPOSIT / BeautyPolicy.depositEnabled (these two values must agree).
+No role may change an ACTIVE Studio's businessCategory through ordinary settings.
+MANAGER may update BusinessHours, BookingPolicy, LessonPolicy.lowBalanceThreshold,
+LessonPolicy.expiryAlertDays, LessonPolicy.restoreOnTimelyCancellation and
+BeautyPolicy.noShowEnabled. STAFF has no Phase 3 configuration write permission.
+The backend compares structural fields with persisted values; hidden controls alone are not authorization.
+
 ---
 
 ## 4. Authentication

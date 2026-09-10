@@ -2337,3 +2337,33 @@ button:disabled {
 .workspace-studio dd { margin: 0; overflow-wrap: anywhere; }
 .workspace-content summary { cursor: pointer; padding: 16px 0; font-weight: 600; }
 @media (max-width: 480px) { .workspace-page { padding: 16px; } .workspace-header > div { gap: 8px; } }
+
+/* Persistent Phase 3 configuration, scoped to the operator workspace. */
+.configuration-panel { margin: 24px 0 40px; }
+.configuration-panel nav { display: flex; gap: 12px; margin: 20px 0; }
+.configuration-panel nav a { padding: 10px 18px; border-radius: 10px; color: #68439c; }
+.configuration-panel nav a[aria-current="page"] { background: #f0eafa; font-weight: 700; }
+.configuration-category { color: #68439c; font-weight: 600; }
+.configuration-form { display: grid; gap: 20px; padding: 24px; border: 1px solid #e8e4ef; border-radius: 16px; }
+.configuration-form fieldset { border: 0; padding: 0; min-width: 0; margin: 0; }
+.configuration-form legend { font-weight: 700; margin-bottom: 16px; }
+.configuration-fields { display: grid; gap: 24px; }
+.configuration-fields fieldset { display: grid; gap: 16px; }
+.configuration-fields label:not(.check-line) { display: grid; gap: 8px; }
+.configuration-fields input:not([type="checkbox"]), .configuration-fields select { width: 100%; min-width: 0; padding: 12px; border: 1px solid #dedbe8; border-radius: 10px; background: white; font: inherit; }
+.configuration-fields input[type="checkbox"] { accent-color: #7951b2; width: 18px; height: 18px; }
+.configuration-fields :disabled { cursor: not-allowed; opacity: .65; }
+.configuration-fields p { font-size: 14px; line-height: 1.7; }
+.hours-row { padding: 12px 0; border-bottom: 1px solid #ece9f2; }
+.hours-row > strong { display: inline-block; margin-right: 24px; }
+.hours-row > .check-line { display: inline-flex; }
+.hours-times { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.configuration-summary dl { display: grid; grid-template-columns: minmax(100px, 1fr) 2fr; gap: 16px; line-height: 1.8; }
+.configuration-summary dt { color: #696477; }
+.configuration-summary dd { margin: 0; overflow-wrap: anywhere; }
+.configuration-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 480px) {
+  .configuration-form { padding: 18px; }
+  .configuration-summary dl { grid-template-columns: 1fr; gap: 6px; }
+  .configuration-summary dd { margin-bottom: 12px; }
+}

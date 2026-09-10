@@ -11,6 +11,7 @@ public class Studio {
     @Column(length=32) public String businessType;
     @Column(nullable=false,length=64) public String timezone;
     @Column(nullable=false,length=32) public String status;
+    @Column(nullable=false) public long configurationVersion;
     @Column(nullable=false) public Instant createdAt;
     @Column(nullable=false) public Instant updatedAt;
     protected Studio() {}

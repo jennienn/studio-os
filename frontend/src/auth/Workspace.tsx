@@ -3,9 +3,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, FormEvent } from "react";
 import { api, ApiError } from "./api";
+import { ConfigurationPanel, WorkspaceMode } from "@/configuration/ConfigurationPanel";
+import { Category } from "@/configuration/model";
 type Studio={id:string;name:string;slug:string;timezone:string;status:string;role:"OWNER"|"MANAGER"|"STAFF"};
 type Me={id:string;email:string|null;name:string;studios:Studio[];activeStudioId:string|null};
-export function Workspace() {
+export function Workspace({mode="home",target=null}:{mode?:WorkspaceMode;target?:Category|null}) {
   const router=useRouter();
   const [me,setMe]=useState<Me|null>(null); const [error,setError]=useState(""); const [busy,setBusy]=useState(false);
   const [name,setName]=useState(""); const [slug,setSlug]=useState(""); const [timezone,setTimezone]=useState("");
@@ -46,9 +48,10 @@ export function Workspace() {
       {me.studios.length>1 && <label>현재 사업장<select value={me.activeStudioId ?? ""} disabled={busy} onChange={e=>void activate(e.target.value)}>
         <option value="">사업장을 선택해 주세요</option>{me.studios.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
       </select></label>}
-      {active && <section className="workspace-studio"><h2>{active.name}</h2><p>사업장이 생성되었습니다. 업종 및 운영 설정은 아직 제공되지 않습니다.</p>
+      {active && <section className="workspace-studio"><h2>{active.name}</h2>
         <dl><dt>사업장 주소</dt><dd>{active.slug}</dd><dt>시간대</dt><dd>{active.timezone}</dd>
           <dt>내 역할</dt><dd>{active.role==="OWNER" ? "소유자" : active.role==="MANAGER" ? "매니저" : "스태프"}</dd></dl></section>}
+      {active && !busy && <ConfigurationPanel key={active.id} studioId={active.id} mode={mode} target={target} onComplete={load}/>}
       <details open={me.studios.length===0}><summary>{me.studios.length===0 ? "첫 사업장 만들기" : "새 사업장 만들기"}</summary>
         <form className="auth-form" onSubmit={create}>
           <label>사업장 이름<input required maxLength={100} value={name} onChange={e=>setName(e.target.value)}/></label>

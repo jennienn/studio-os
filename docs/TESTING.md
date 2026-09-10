@@ -83,3 +83,17 @@ LESSON MVP에서 확인:
 - 단체 출석
 - 재등록 cycle history
 - 결제 필요 상태
+
+## 7. Phase 3 verification scope
+
+ConfigurationIntegrationTest uses PostgreSQL/Redis Testcontainers and the Spring Security
+filter chain. It covers both categories, invalid subtype/capability/policy requests, OWNER/
+MANAGER/STAFF permissions, cross-tenant reads/writes, revoked membership, category guards,
+transaction rollback after a DB failure, repeated completion and concurrent/stale writes.
+ConfigurationValidationTest covers the subtype matrix and incomplete/invalid configuration.
+
+Frontend configuration tests cover category cards, filtered subtypes, branch-only policy
+questions and summary wording, draft reset, role-disabled fields and route decisions.
+Playwright configuration.spec.ts uses real signup/verification/login and disposable databases
+for LESSON and BEAUTY on desktop/mobile, including completion, reload, settings persistence
+and incompatible route redirects. Future business operations are outside this suite's Phase 3 scope.

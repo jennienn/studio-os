@@ -91,3 +91,16 @@ Replay handling must revalidate the current actor and Studio authorization befor
 
 초기 API는 `/api/v1`.
 Breaking change가 필요할 때만 새 version을 만든다.
+
+## 8. Phase 3 configuration API
+
+Under `/api/v1/studios/{studioId}`:
+- GET `/onboarding` or `/configuration`: authorized configuration, category-scoped catalog, permissions and version.
+- POST `/onboarding/complete`: OWNER-only, complete validated configuration, atomic activation; repeat returns 409.
+- PUT `/configuration`: full validated replacement values (rows updated in place), version required; stale version returns 409.
+- GET `/configuration/lesson-policy` or `/configuration/beauty-policy`: membership plus ACTIVE/category guard; opposite category returns 403.
+
+Commands include version, businessCategory, businessType, all current-category capability flags,
+seven businessHours rows, bookingPolicy, and only the matching category policy.
+The opposite category policy must be null/absent. Capability dependencies and field-level role
+restrictions follow ADR-051. All mutations retain server-session CSRF protection.
