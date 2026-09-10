@@ -13,6 +13,7 @@ import static com.studioos.studio.configuration.StudioTaxonomy.*;
 
 @Service
 public class ConfigurationService {
+    private final List<ConfigurationChangeGuard> changeGuards;
     private final StudioAuthorization authorization;
     private final StudioRepository studios;
     private final ConfigurationStore store;
@@ -20,7 +21,8 @@ public class ConfigurationService {
     private final StudioCategoryGuard categoryGuard;
 
     public ConfigurationService(StudioAuthorization authorization, StudioRepository studios,
-        ConfigurationStore store, ConfigurationValidation validation, StudioCategoryGuard categoryGuard) {
+        ConfigurationStore store, ConfigurationValidation validation, StudioCategoryGuard categoryGuard,List<ConfigurationChangeGuard> changeGuards) {
+        this.changeGuards=changeGuards;
         this.authorization=authorization; this.studios=studios; this.store=store;
         this.validation=validation; this.categoryGuard=categoryGuard;
     }
@@ -65,6 +67,7 @@ public class ConfigurationService {
                 || (before.beautyPolicy()!=null && !before.beautyPolicy().depositEnabled().equals(command.beautyPolicy().depositEnabled())))
                 forbidden();
         }
+        changeGuards.forEach(guard->guard.validate(studio.id,command));
         store.write(studio.id,command);
         studio.businessType=command.businessType();
         studio.configurationVersion++; studio.updatedAt=Instant.now();

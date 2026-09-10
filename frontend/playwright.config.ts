@@ -14,8 +14,9 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 180000,
   }, {
-    command: "npm run start -- --hostname 127.0.0.1 --port 31741",
+    command: "node scripts/e2e-server.mjs",
     url: "http://127.0.0.1:31741",
     reuseExistingServer: false,
+    timeout: 180000,
   }],
 });

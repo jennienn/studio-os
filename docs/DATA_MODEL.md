@@ -720,3 +720,13 @@ Resolution:
 No terminal Booking/Attendance outcome may leave an ACTIVE entitlement reservation stranded.
 
 COUNT_BASED expiration does not modify ledger rows merely to zero unused entitlement. Historical positive balance may remain on an EXPIRED cycle.
+
+
+## Phase 7–8 accepted scope
+
+Phase 7–8 follows ADR-053: TIME_BASED period is exactly validityDays or MONTH, with historical resolved snapshot values. Termination preserves ledger credits. Finalized attendance cannot change to a different result. Schedule regeneration preserves every occurrence with booking history.
+
+`LessonCyclePayment` is a tenant-scoped association between one `EnrollmentCycle` and its one
+confirmed `Payment`. It lets the existing refund transaction find and cancel the exact cycle without
+making either aggregate depend on a mutable external reference string. The database enforces one
+payment per cycle and prevents one payment from funding multiple cycles.

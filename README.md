@@ -164,7 +164,11 @@ Both ports must be free; existing servers are never reused. Build with the defau
 verification delivery, login, Studio creation, password reset, session revocation, logout,
 both category onboarding flows, configuration reload/update, route guards, landing previews
 and the demo gate, plus customer, payment/refund, manual booking and time-block flows in both
-categories. They never use the Compose database or real OAuth.
+categories. The LESSON suite also covers pass products, private/group enrollment, cycle renewal,
+private completion and cancellation, group booking and bulk attendance. It never uses the Compose
+database or real OAuth.
+Playwright builds and serves an ignored `.next-e2e` directory so an IDE development server cannot
+rewrite the production chunks during the suite.
 Test mail is written to ignored `backend/.local-mail/e2e/`. No external email is sent.
 
 From the root after filling `.env`:
@@ -175,7 +179,8 @@ docker compose config --quiet
 
 Historical screenshots and manual prototype verification in `artifacts/` describe the
 old prototype, not the production acceptance suite. Authoritative product requirements
-remain under `docs/`; specialized features from Phase 7 onward are not implemented.
+remain under `docs/`. Phase 7–8 LESSON products, enrollment, cycles, classes, private lessons,
+group bookings and attendance are implemented; Phase 9 BEAUTY specialization remains deferred.
 
 ### Customer, payment and booking operations
 
@@ -186,6 +191,14 @@ Customer archival preserves history and is rejected while pending/confirmed book
 Payment records are manual KRW records, not payment-provider transactions. Current bookings
 are explicitly marked manual 1:1 entries without a pass or beauty service; times use the Studio
 timezone. See `docs/API_CONVENTIONS.md` for API routes and required idempotency headers.
+
+### LESSON products and operations
+
+For an ACTIVE LESSON Studio, OWNER/MANAGER can manage `/app/lesson/pass-products`,
+`/app/lesson/enrollments` and `/app/lesson/classes`. Private lesson booking is integrated into
+`/app/bookings`; group booking and bulk attendance are available under `/app/lesson/attendance`
+when the matching capabilities are enabled. STAFF mutation access is limited to assigned private
+lesson outcomes and attendance for classes they instruct.
 
 
 ## Phase 2 authentication setup

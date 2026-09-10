@@ -329,3 +329,8 @@ Before Phase 8 lesson operations are accepted, tests must cover:
 - GROUP ABSENT releases reservation without deduction
 - BOOKING_CONFIRMED no-show does not auto-restore
 - no terminal booking/attendance leaves ACTIVE entitlement reservations stranded
+
+
+## Phase 7–8 accepted scope
+
+Phase 7–8 is user-approved as one coordinated A–F LESSON scope under ADR-053; Phase 9 remains excluded.

@@ -2,18 +2,20 @@
 
 # Booking Domain Specification
 
-## Current Phase 6 manual scope (ADR-052)
+## Phase 6 manual scope retained in Phase 7–8 (ADR-052)
 
 The operator may create a clearly marked manual 1:1 booking without an offering in this phase.
 `manual_entry=true`, `source=OPERATOR`; kind matches the Studio category, staff is required,
 and the default OWNER Staff is available. LESSON_PRIVATE creation requires PRIVATE_LESSON enabled.
-LESSON_GROUP and all specialized detail/eligibility/side-effect implementations remain deferred.
+Manual `LESSON_GROUP` creation remains unavailable. Phase 7–8 adds separate specialized private and
+group commands with `LessonBookingDetail`, entitlement validation and documented side effects.
 The regular creation status stays CONFIRMED (ADR-016); PENDING is retained in the state machine.
 Existing manual records remain distinguishable when specialized bookings are introduced.
 
 Only PENDING/CONFIRMED records may change time, staff or note; customer/kind do not change.
 Create/reschedule rejects past starts and validates Studio-local hours. The three BookingPolicy
-fields do not restrict these operator commands; future public/entitlement flows apply their policies.
+fields do not restrict these manual operator commands; specialized entitlement flows apply their
+cycle and capability policies.
 Terminal commands only change common status and never perform pass, treatment, deposit or revisit effects.
 Common commands reject non-manual records, so future specialization cannot silently skip its rules.
 
@@ -604,3 +606,19 @@ NO_SHOW / ABSENT
 No-show/absence는 cancellation이 아니므로 `CANCEL_RESTORE`를 자동 생성하지 않는다.
 
 모든 NO_SHOW / ABSENT 처리 transaction 마지막에는 cycle completion/expiration을 재평가한다. ACTIVE reservation이 stranded 상태로 남으면 안 된다.
+
+
+## Phase 7–8 accepted scope
+
+Phase 7–8 adds LESSON specialization on the common Booking store. ADR-053 defines selective preservation on schedule changes, provisional FIRST_USE booking windows, finalized attendance mapping and assignment-scoped STAFF commands. Existing manual records retain their distinct history and have no specialized side effects.
+
+ADR-054 separates group capacity from instructor occupancy. A SCHEDULED occurrence reserves one
+instructor interval; member bookings within that occurrence share it. Cancelled group bookings may
+be rebooked before attendance finalization, with history preserved. Duplicate occupying bookings
+for the same occurrence/customer are rejected.
+
+Schedule regeneration retains past instances and any future instance with booking history. A retained
+schedule/date prevents duplicate generation for that date. Occurrences snapshot capacity and instructor;
+class edits govern newly generated instances. The hourly in-process maintenance job uses separate
+Studio-locked transactions for expiry and each schedule. Invalid generation rolls back that schedule
+and emits a sanitized review warning; unrelated schedules continue. No external scheduler is required.

@@ -25,7 +25,7 @@ for(const category of ["LESSON","BEAUTY"]){
     await page.getByLabel('금액 (원)',{exact:true}).fill('45000');await page.getByRole('button',{name:'결제 기록 저장',exact:true}).click();
     await expect(page.getByText('수납 완료',{exact:true})).toBeVisible();await page.getByLabel('환불 사유',{exact:true}).fill('요청에 따른 전액 환불');await page.getByRole('button',{name:'전액 환불 기록',exact:true}).click();
     await expect(page.getByText('환불 완료',{exact:true})).toBeVisible();await page.reload();await expect(page.getByText('환불 이력',{exact:true})).toBeVisible();
-    await page.getByRole('link',{name:'예약',exact:true}).click();
+    await page.getByRole('link',{name:category==='LESSON'?'수업 일정':'예약',exact:true}).click();
     const tomorrow=new Date(Date.now()+2*86400000).toISOString().slice(0,10);await page.getByLabel('예약 날짜',{exact:true}).fill(tomorrow);
     async function book(start:string,end:string){await page.getByRole('button',{name:'예약 만들기',exact:true}).click();await expect(page.getByRole('option',{name:/수정 고객/})).toHaveCount(1);
       await page.getByLabel(label+' 선택',{exact:true}).selectOption({label:'수정 고객 · 010-1234-5678'});await page.getByLabel('시작 시간',{exact:true}).fill(start);await page.getByLabel('종료 시간',{exact:true}).fill(end);await page.getByRole('button',{name:'예약 저장',exact:true}).click();}

@@ -63,7 +63,7 @@ for(const category of ["LESSON","BEAUTY"] as const) {
     await expect(page.getByTestId("active-category")).toContainText("ACTIVE");
     await page.reload();
     await expect(page.getByTestId("active-category")).toContainText(category==="LESSON"?"레슨":"뷰티");
-    await expect(page.getByRole("navigation",{name:"사업장 메뉴"}).getByRole("link")).toHaveCount(5);
+    await expect(page.getByRole("navigation",{name:"사업장 메뉴"}).getByRole("link")).toHaveCount(category==="LESSON"?7:5);
     await page.getByRole("link",{name:"설정",exact:true}).click();
     await expect(page.getByRole("button",{name:category==="LESSON"?"뷰티 / 예약 서비스":"레슨 / 스튜디오",exact:true})).toHaveCount(0);
     await page.getByRole("button",{name:category==="LESSON"?"필라테스":"속눈썹",exact:true}).click();

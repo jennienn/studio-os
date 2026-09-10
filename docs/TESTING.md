@@ -110,4 +110,22 @@ Concurrent tests include conflicting bookings, same-key booking retries, booking
 customer-archive-vs-booking creation, and payment full refunds. Actual PostgreSQL Testcontainers are used.
 The operations Playwright flow runs for both categories on desktop/mobile using real local-auth sessions,
 Customer CRUD/archive/search, payment/refund, booking conflict/cancel/complete/no-show and block creation/removal.
-Specialized booking side effects remain explicitly out of scope.
+Specialized booking side effects remain explicitly out of scope for the Phase 4–6 suite.
+
+## 9. Phase 7–8 verification
+
+Backend PostgreSQL/Redis integration tests cover pass validation and category/capability guards,
+private/group enrollment compatibility, cycle purchase/renewal/activation, ledger-derived balance,
+FIRST_USE windows, termination/refund guards, selective occurrence regeneration, private booking
+deduction/restore, group capacity and attendance. Cross-tenant references and OWNER/MANAGER/STAFF
+assignment rules are exercised through the Spring Security filter chain.
+
+Concurrency tests cover same-key and different-key private completion, group capacity races,
+duplicate member booking, attendance replay, renewal races, schedule-update versus booking and
+termination versus booking. Each write uses PostgreSQL transactions and the documented Studio or
+occurrence row lock; Redis remains session storage rather than business source of truth.
+
+Frontend tests cover capability-based LESSON navigation, pass/enrollment/class/attendance panels,
+private eligibility selection and category isolation. Playwright runs the integrated LESSON product
+→ enrollment → private completion/cancellation → renewal → class/group attendance flow on desktop
+and mobile with local authentication and disposable containers.

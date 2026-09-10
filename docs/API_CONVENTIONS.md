@@ -124,3 +124,26 @@ Keys are scoped by Studio/operator/operation; request hashes include the target 
 Same successful request replays; different payload under the same key returns 409. Failed transactions retain
 neither business changes nor a successful replay record. No key expiry/reuse is currently enabled.
 Role restrictions and manual-scope exceptions are defined by ADR-052 and SECURITY.md.
+
+## 10. Phase 7–8 LESSON APIs
+
+All paths are under `/api/v1/studios/{studioId}/lesson` and require an ACTIVE LESSON Studio plus
+the relevant capability. Every entity/reference is revalidated against the authorized Studio.
+
+- Pass products: GET/POST `/pass-products`, GET/PUT `/pass-products/{id}`.
+- Enrollments: GET/POST `/enrollments`, GET `/enrollments/{id}`, POST
+  `/enrollments/{id}/renew` and `/enrollments/{id}/end`.
+- Cycles: GET `/enrollments/{id}/cycles`, GET `/cycles/{id}/ledger`, POST
+  `/cycles/{id}/adjustments`.
+- Classes: GET/POST `/classes`, PUT `/classes/{id}`, GET/POST `/classes/{id}/schedules`, PUT
+  `/classes/{id}/schedules/{scheduleId}`.
+- Occurrences: GET `/occurrences`, POST `/occurrences/{id}/complete`, GET/PUT
+  `/occurrences/{id}/attendance`.
+- Specialized bookings: POST `/private-bookings` and POST `/group-bookings`. Their later
+  transitions use the common booking command paths and invoke the LESSON specialization.
+
+Enrollment create/renew/end, cycle adjustment, class/schedule mutation, occurrence completion,
+private/group booking and bulk attendance require `Idempotency-Key`. Bulk attendance is one atomic
+command: every submitted row succeeds or the transaction rolls back. List endpoints use `page` and
+`size`; pass product and enrollment lists return the common page envelope, while class, occurrence,
+ledger and attendance lists return the requested bounded slice.

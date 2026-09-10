@@ -208,3 +208,8 @@ MVP rate limiting targets:
 - public booking creation
 
 OAuth abuse protection follows provider/state validation and endpoint-level limits where appropriate. OTP send/verify limits are added in P1 with OTP.
+
+
+## Phase 7–8 accepted scope
+
+Phase 7–8 LESSON permissions supersede the Phase 4–6 write restriction only as stated in ADR-053. OWNER/MANAGER manage products, classes/schedules, enrollment and lesson operations. STAFF may complete/no-show assigned private bookings and finalize attendance for their instructed classes; all assignment checks run server-side. Payment administration, refunds, manual adjustment and internal customer memo remain forbidden for STAFF.

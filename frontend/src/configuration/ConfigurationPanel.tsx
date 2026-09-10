@@ -7,8 +7,8 @@ import { Category, ConfigurationView, Draft, initialDraft, chooseCategory, confi
 import { ConfigurationFields } from "./ConfigurationFields";
 import { ConfigurationSummary } from "./ConfigurationSummary";
 
-export type WorkspaceMode="home"|"onboarding"|"settings"|"guard"|"customers"|"payments"|"bookings";
-export function ConfigurationPanel({studioId,mode,target=null,onComplete,children}:{studioId:string;mode:WorkspaceMode;target?:Category|null;onComplete:()=>Promise<void>;children?:ReactNode}) {
+export type WorkspaceMode="home"|"onboarding"|"settings"|"guard"|"customers"|"payments"|"bookings"|"lesson-products"|"lesson-enrollments"|"lesson-classes"|"lesson-attendance";
+export function ConfigurationPanel({studioId,mode,target=null,onComplete,children}:{studioId:string;mode:WorkspaceMode;target?:Category|null;onComplete:()=>Promise<void>;children?:ReactNode|((view:ConfigurationView)=>ReactNode)}) {
   const router=useRouter();
   const [view,setView]=useState<ConfigurationView|null>(null);
   const [draft,setDraft]=useState<Draft|null>(null);
@@ -55,6 +55,9 @@ export function ConfigurationPanel({studioId,mode,target=null,onComplete,childre
   if(!view || !draft) return <section>{error ? <p role="alert">{error}</p> : <p role="status">설정을 불러오고 있습니다.</p>}<button className="button" onClick={()=>void load()}>다시 불러오기</button></section>;
   if((redirect && !(redirect==="/onboarding" && mode==="onboarding")) || mode==="guard" || (mode==="onboarding" && view.status==="ACTIVE")) return <p role="status">사업장 화면으로 이동합니다.</p>;
   if(mode==="onboarding" && !view.permissions.completeOnboarding) return <p>소유자가 사업장 온보딩을 완료해야 합니다.</p>;
+  const content=typeof children==="function"?children(view):children;
+  const lessonMode=mode.startsWith("lesson-");
+  const lessonAllowed=view.businessCategory==="LESSON" && (mode==="lesson-attendance"?view.configuration?.capabilities.GROUP_CLASS:view.permissions.editPolicies && (mode!=="lesson-classes"||view.configuration?.capabilities.GROUP_CLASS));
   const sections=["type","capabilities","hours","policies"] as const;
   return <section className="configuration-panel">
     {view.status==="ACTIVE" && <>
@@ -62,10 +65,14 @@ export function ConfigurationPanel({studioId,mode,target=null,onComplete,childre
       <nav aria-label="사업장 메뉴"><Link href="/app" aria-current={mode==="home"?"page":undefined}>홈</Link>
         {view.permissions.editPolicies && <Link href="/app/customers" aria-current={mode==="customers"?"page":undefined}>{view.businessCategory==="LESSON"?"회원":"고객"}</Link>}
         {view.permissions.editPolicies && <Link href="/app/payments" aria-current={mode==="payments"?"page":undefined}>결제</Link>}
-        <Link href="/app/bookings" aria-current={mode==="bookings"?"page":undefined}>예약</Link>
+        <Link href="/app/bookings" aria-current={mode==="bookings"?"page":undefined}>{view.businessCategory==="LESSON"?"수업 일정":"예약"}</Link>
+        {view.businessCategory==="LESSON" && <>
+          {view.permissions.editPolicies && <><Link href="/app/lesson/pass-products">이용권</Link><Link href="/app/lesson/enrollments">결제 / 재등록</Link></>}
+          {view.configuration?.capabilities.GROUP_CLASS && <>{view.permissions.editPolicies && <Link href="/app/lesson/classes">그룹 수업</Link>}<Link href="/app/lesson/attendance">{view.configuration?.capabilities.ATTENDANCE?"출석":"그룹 일정"}</Link></>}
+        </>}
         <Link href="/app/settings" aria-current={mode==="settings"?"page":undefined}>설정</Link></nav>
     </>}
-    {mode==="bookings" ? children : mode==="customers" || mode==="payments" ? (view.permissions.editPolicies?children:<p role="alert">이 화면에 접근할 권한이 없습니다.</p>) : mode==="home" ? <><h2>사업장 설정 완료</h2><p>위 메뉴에서 운영 업무를 시작하거나 설정을 확인할 수 있습니다.</p><ConfigurationSummary draft={draft}/></> :
+    {lessonMode ? (lessonAllowed?content:<p role="alert">이 화면에 접근할 수 없습니다.</p>) : mode==="bookings" ? content : mode==="customers" || mode==="payments" ? (view.permissions.editPolicies?content:<p role="alert">이 화면에 접근할 권한이 없습니다.</p>) : mode==="home" ? <><h2>사업장 설정 완료</h2><p>위 메뉴에서 운영 업무를 시작하거나 설정을 확인할 수 있습니다.</p><ConfigurationSummary draft={draft}/></> :
       <form onSubmit={submit} className="configuration-form">
         <h2>{mode==="onboarding" ? "사업장 시작하기" : "사업장 설정"}</h2>
         {mode==="onboarding" ? <>

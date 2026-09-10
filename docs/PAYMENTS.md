@@ -208,3 +208,8 @@ cycle already COMPLETED or EXPIRED
 ```
 
 MVP에서는 사용분 차감 후 부분 환불, 비례 환불, 과거 completed cycle 환불을 자동 계산하지 않는다. 해당 기능은 P1+ 별도 정책/ADR 대상이다.
+
+
+## Phase 7–8 accepted scope
+
+Phase 7–8 adds payment-confirmed lesson purchase/renewal and transactional lesson refund under ADR-046/053. TIME_BASED PURCHASE_DATE cannot be purchased in advance while an ACTIVE cycle exists. Enrollment termination does not refund payments.

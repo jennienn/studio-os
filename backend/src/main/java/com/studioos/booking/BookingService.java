@@ -14,12 +14,12 @@ import java.util.*;
 import static com.studioos.booking.BookingDto.*;
 @Service
 public class BookingService {
-    private final BookingRepository bookings;private final BookingBlockRepository blocks;private final CustomerRepository customers;
+    private final List<BookingSpecialization> specializations;private final BookingRepository bookings;private final BookingBlockRepository blocks;private final CustomerRepository customers;
     private final StaffRepository staff;private final OperationalAccess access;private final StudioRepository studios;
     private final BookingAvailability availability;private final IdempotencyService idempotency;private final Validator validator;
     private final StudioCapabilityRepository capabilities;
     public BookingService(BookingRepository bookings,BookingBlockRepository blocks,CustomerRepository customers,StaffRepository staff,
-        OperationalAccess access,StudioRepository studios,BookingAvailability availability,IdempotencyService idempotency,Validator validator,StudioCapabilityRepository capabilities){
+        OperationalAccess access,StudioRepository studios,BookingAvailability availability,IdempotencyService idempotency,Validator validator,StudioCapabilityRepository capabilities,List<BookingSpecialization> specializations){this.specializations=specializations;
         this.bookings=bookings;this.blocks=blocks;this.customers=customers;this.staff=staff;this.access=access;this.studios=studios;this.availability=availability;this.idempotency=idempotency;this.validator=validator;this.capabilities=capabilities;
     }
     @Transactional(readOnly=true) public PageResult<View> list(UUID studio,Instant from,Instant to,String status,int page,int size){
@@ -43,19 +43,21 @@ public class BookingService {
     }
     @Transactional public View edit(UUID studio,UUID id,String key,Edit body){var actor=lock(studio);validate(body);
         return idempotency.execute(actor,"RESCHEDULE_BOOKING",key,Map.of("id",id,"body",body),200,View.class,()->{
-            var b=find(studio,id);manual(b);if(!Set.of("PENDING","CONFIRMED").contains(b.status))transitionError();
+            var b=find(studio,id);if(!b.manualEntry)specialization(b).validateEdit(b,body);if(!Set.of("PENDING","CONFIRMED").contains(b.status))transitionError();
             availability.check(studios.findById(studio).orElseThrow(),body.staffId(),body.startAt(),body.endAt(),id);
             b.staffId=body.staffId();b.startAt=body.startAt();b.endAt=body.endAt();b.note=body.note();b.updatedAt=Instant.now();studios.flush();return view(b,false);
         });
     }
-    @Transactional public View transition(UUID studio,UUID id,String key,String command){var actor=lock(studio);
+    @Transactional public View transition(UUID studio,UUID id,String key,String command){
+        var actor=access.member(studio);studios.lockById(studio).orElseThrow();var current=find(studio,id);
+        if(current.manualEntry)access.manager(studio);else specialization(current).authorize(current,actor,command);
         return idempotency.execute(actor,command+"_BOOKING",key,id,200,View.class,()->{
-            var b=find(studio,id);manual(b);
-            String next=switch(command){case "CANCEL"->"CANCELLED";case "COMPLETE"->"COMPLETED";case "NO_SHOW"->"NO_SHOW";case "CONFIRM"->"CONFIRMED";default->throw new ApiException(400,"INVALID_COMMAND","지원하지 않는 예약 명령입니다.");};
-            boolean allowed=command.equals("CANCEL")?Set.of("PENDING","CONFIRMED").contains(b.status):command.equals("CONFIRM")?b.status.equals("PENDING"):b.status.equals("CONFIRMED");
-            if(!allowed)transitionError();b.status=next;b.updatedAt=Instant.now();studios.flush();return view(b,false);
+            var booking=find(studio,id);BookingTransitions.apply(booking,command);studios.flush();
+            if(!booking.manualEntry)specialization(booking).afterTransition(booking,actor,command);
+            studios.flush();return view(booking,actor.membershipRole()==StudioMembership.Role.STAFF);
         });
     }
+    private BookingSpecialization specialization(Booking booking){return specializations.stream().filter(s->s.supports(booking)).findFirst().orElseThrow(()->new ApiException(409,"SPECIALIZATION_REQUIRED","전문 예약 처리가 필요합니다."));}
     @Transactional(readOnly=true) public List<StaffView> staff(UUID studio){access.manager(studio);return staff.findByStudioIdAndActiveOrderByNameAsc(studio,true).stream().map(s->new StaffView(s.id,s.name)).toList();}
     @Transactional(readOnly=true) public Availability available(UUID studio,UUID staff,Instant start,Instant end){access.manager(studio);
         try{availability.check(studios.findById(studio).orElseThrow(),staff,start,end,null);return new Availability(true,"AVAILABLE","예약 가능한 시간입니다.");}

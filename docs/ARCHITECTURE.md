@@ -331,3 +331,16 @@ Successor SCHEDULED activation occurs only after this terminal evaluation.
 
 A lesson-cycle full refund is allowed in MVP only when no entitlement has been consumed and no outstanding booking/reservation remains. The refund transaction updates Payment/PaymentRefund and cancels the associated cycle atomically.
 
+## Phase 7–8 LESSON integration
+
+The LESSON module extends the common Booking aggregate through specialization and additional
+occupancy services. The common booking transaction still owns time/status changes; LESSON handlers
+validate the linked cycle, reserve or consume entitlement and append ledger effects inside that same
+transaction. Scheduled occurrences participate in instructor occupancy without applying exclusive
+member capacity semantics to the shared Booking table.
+
+Cycle purchase, renewal, termination, refund effects and configuration dependency checks stay in
+Spring services. PostgreSQL Studio-row locking serializes cross-aggregate writes, and occurrence-row
+locking protects group capacity and attendance. Partial unique indexes and reference uniqueness remain
+the final guard for cycle slots, generated occurrences, attendance and ledger effects. Redis stores
+server sessions only and is not consulted for LESSON balance or booking correctness.

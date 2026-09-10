@@ -1105,3 +1105,44 @@ Confirmed by the user for the combined Customer → Payment → Common Booking s
 
 Phase 4 tests must pass before Payment implementation; Payment tests must pass before Booking implementation.
 The task explicitly defers LessonBookingDetail, BeautyBookingDetail and all Phase 7+ domain records.
+
+
+## ADR-053 — Coordinated LESSON Phases 7–8
+Status: Accepted
+
+User-approved scope proceeds A products/enrollment → B cycles/ledger/renewal → C recurring classes
+→ D private lessons → E group/attendance → F full transaction/concurrency verification. Phase 9 is excluded.
+
+- Enrollment termination rejects PENDING/CONFIRMED bookings or ACTIVE reservations. Otherwise it
+  ends Enrollment and cancels remaining ACTIVE/SCHEDULED cycles, without successor activation,
+  automatic refund, deletion or zeroing ledger credits. Refund is a separate explicit operation.
+- Schedule changes preserve past occurrences and future occurrences with ANY booking history.
+  Only future unbooked occurrences may be regenerated. The new schedule governs new generation.
+- TIME_BASED PURCHASE_DATE purchase is rejected while any ACTIVE cycle exists. It always starts
+  ACTIVE; no SCHEDULED TIME_BASED purchase in MVP. Exactly one of validityDays or billingPeriod=MONTH
+  defines its period; resolved historical period values are persisted. COUNT_BASED renewal rules remain.
+- FIRST_USE BOOKING_CONFIRMED initializes dates at confirmation using Studio-local today. Deferred
+  FIRST_USE uses the earliest outstanding lesson date as provisional start, with a validityDays window.
+  Booking validates the resulting window; release of the earliest reservation can move it later.
+  Actual successful completion/PRESENT initializes real dates and consumes/deducts atomically.
+  Previously accepted future bookings must not cause real completion/attendance to fail or be auto-cancelled.
+- Bulk attendance is all-or-nothing. PRESENT maps to Booking COMPLETED, ABSENT to NO_SHOW;
+  CANCELLED follows the allowed booking cancellation state machine (or already CANCELLED).
+  Same finalized result is idempotent; changing finalized attendance is rejected in this phase.
+  Occurrence completion requires all linked bookings terminal and adds no implicit deduction.
+- OWNER/MANAGER manage products, enrollments, classes/schedules, bookings, attendance, completion and
+  renewal. Only OWNER adjusts counts or refunds. STAFF may complete/no-show assigned private lessons
+  and read/finalize attendance for classes they instruct. Server verifies assignment. STAFF has no
+  product/enrollment/class administration, payments, refund, adjustment, arbitrary reschedule/cancel or memo access.
+- PassProduct price must be positive. Free passes, discounts and zero-price products are outside scope.
+
+## ADR-054 — Group Rebooking and Instructor Occupancy
+Status: Accepted
+
+Confirmed by the user's instruction to apply the proposed ADR and proceed through Steps A–F:
+- A customer cannot hold duplicate PENDING/CONFIRMED bookings in the same occurrence.
+  Rebooking after CANCELLED is allowed only before attendance finalization. Prior booking and ledger
+  history remain intact. Finalized attendance prevents another booking in the occurrence.
+- One SCHEDULED occurrence occupies its instructor's time, independently of member capacity.
+  Multiple members in that occurrence are allowed; overlapping private bookings or other occurrences
+  for the same instructor are rejected. Preserved occurrences participate in this validation.

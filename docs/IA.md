@@ -95,7 +95,8 @@ Preview segmented switch:
 
 /onboarding은 인증된 운영자의 현재 PRE_ONBOARDING Studio를 설정하는 화면이다.
 ACTIVE Studio는 /app으로 이동한다. PRE_ONBOARDING의 /app 및 하위 경로는 /onboarding으로 이동한다.
-Phase 3 시점의 ACTIVE 메뉴는 홈(/app)과 설정(/app/settings)이었다. 현재 Phase 4–6 메뉴는 §8을 따른다.
+Phase 3 시점의 ACTIVE 메뉴는 홈(/app)과 설정(/app/settings)이었다. Phase 4–6 메뉴는 §8을 따르고,
+현재 Phase 7–8 LESSON 메뉴는 §9를 따른다.
 상대 category의 /app/lesson/* 또는 /app/beauty/* 직접 접근은 /app으로 이동한다.
 아직 구현되지 않은 다른 /app 하위 업무 경로도 /app으로 이동하며 가짜 업무 화면을 제공하지 않는다.
 
@@ -106,4 +107,21 @@ STAFF: 홈, 배정된 예약, 조회용 설정. 고객 전체 목록과 결제 �
 /app/customers, /app/customers/new, /app/customers/{id}는 공통 Customer 화면이다.
 /app/payments, /app/payments/new, /app/payments/{id}는 수동 결제 및 이력 화면이다.
 /app/bookings는 Studio 시간대 기준 날짜 선택/주간 탐색/당일 목록, 수동 예약과 차단 화면이다.
-전문 이용권·출석·시술·예약금 메뉴와 대시보드 지표는 추가하지 않는다.
+Phase 4–6 범위에서는 전문 이용권·출석·시술·예약금 메뉴와 대시보드 지표를 추가하지 않았다.
+
+## 9. Phase 7–8 LESSON routes
+
+OWNER/MANAGER LESSON navigation adds:
+
+```text
+/app/lesson/pass-products
+/app/lesson/enrollments
+/app/lesson/classes        (GROUP_CLASS enabled)
+/app/lesson/attendance     (GROUP_CLASS and ATTENDANCE enabled)
+```
+
+`/app/bookings` retains manual 1:1 records and adds pass-backed private lesson creation when
+`PRIVATE_LESSON` is enabled. `/app/customers/{id}` shows the customer's enrollment and cycle
+history. STAFF does not receive product/enrollment/class administration routes; assigned lesson
+outcomes remain available only through the permitted operation screen. BEAUTY navigation does not
+expose any of these LESSON routes.

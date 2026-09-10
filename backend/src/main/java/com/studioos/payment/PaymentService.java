@@ -12,10 +12,11 @@ import java.util.*;
 import static com.studioos.payment.PaymentDto.*;
 @Service
 public class PaymentService {
+    private final List<PaymentRefundEffect> refundEffects;
     private final PaymentRepository payments;private final PaymentRefundRepository refunds;private final CustomerRepository customers;
     private final OperationalAccess access;private final StudioRepository studios;private final IdempotencyService idempotency;private final Validator validator;
-    public PaymentService(PaymentRepository payments,PaymentRefundRepository refunds,CustomerRepository customers,OperationalAccess access,StudioRepository studios,IdempotencyService idempotency,Validator validator){
-        this.payments=payments;this.refunds=refunds;this.customers=customers;this.access=access;this.studios=studios;this.idempotency=idempotency;this.validator=validator;
+    public PaymentService(PaymentRepository payments,PaymentRefundRepository refunds,CustomerRepository customers,OperationalAccess access,StudioRepository studios,IdempotencyService idempotency,Validator validator,List<PaymentRefundEffect> refundEffects){
+        this.refundEffects=refundEffects;this.payments=payments;this.refunds=refunds;this.customers=customers;this.access=access;this.studios=studios;this.idempotency=idempotency;this.validator=validator;
     }
     @Transactional(readOnly=true) public PageResult<View> list(UUID studio,String status,UUID customer,int page,int size){
         var actor=access.manager(studio);PageResult.validate(page,size);
@@ -47,7 +48,7 @@ public class PaymentService {
     @Transactional public View refund(UUID studio,UUID id,String key,Refund body){
         var actor=access.manager(studio);actor.requireOwner();studios.lockById(studio).orElseThrow();validate(body);
         return idempotency.execute(actor,"REFUND_PAYMENT",key,Map.of("id",id,"body",body),200,View.class,()->{
-            var p=find(studio,id);require(p,"PAID");refunds.save(new PaymentRefund(p,body.reason().trim(),actor.authenticatedUserId()));p.status="REFUNDED";studios.flush();return view(p);
+            var p=find(studio,id);require(p,"PAID");refundEffects.forEach(effect->effect.apply(p));refunds.save(new PaymentRefund(p,body.reason().trim(),actor.authenticatedUserId()));p.status="REFUNDED";studios.flush();return view(p);
         });
     }
     private AuthorizedStudioContext lock(UUID studio){var actor=access.manager(studio);studios.lockById(actor.authorizedStudioId()).orElseThrow();return actor;}

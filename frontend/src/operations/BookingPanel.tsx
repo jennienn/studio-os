@@ -5,12 +5,14 @@ import {useCommand} from "./useCommand";
 import {CustomerPicker} from "./CustomerPicker";
 import {PageResult} from "./CustomerPanel";
 import {addDays,localInstant,localValue} from "./studioTime";
-export type Booking={id:string;customerName:string;customerPhone:string;staffId:string;staffName:string;startAt:string;endAt:string;status:string;note:string|null};
+import {CyclePicker} from "@/lesson/CyclePicker";
+export type Booking={id:string;customerName:string;customerPhone:string;staffId:string;staffName:string;startAt:string;endAt:string;status:string;note:string|null;manualEntry?:boolean;bookingKind?:string};
 type Block={id:string;scopeType:string;staffId:string|null;startAt:string;endAt:string;reason:string|null};
 const statuses:Record<string,string>={PENDING:"대기",CONFIRMED:"확정",COMPLETED:"완료",CANCELLED:"취소",NO_SHOW:"노쇼"};
-export function BookingPanel({studioId,category,timezone,role}:{studioId:string;category:string;timezone:string;role:string}){
+export function BookingPanel({studioId,category,timezone,role,privateEnabled=false,attendanceEnabled=false}:{studioId:string;category:string;timezone:string;role:string;privateEnabled?:boolean;attendanceEnabled?:boolean}){
   const base=`/studios/${studioId}`,command=useCommand(),canWrite=role!=="STAFF";
   const [date,setDate]=useState(()=>localValue(new Date(),timezone).slice(0,10));
+  const [specialized,setSpecialized]=useState(false),[cycle,setCycle]=useState("");
   const [formDate,setFormDate]=useState(date);
   const [data,setData]=useState<PageResult<Booking>|null>(null),[blocks,setBlocks]=useState<PageResult<Block>|null>(null),[staff,setStaff]=useState<{id:string;name:string}[]>([]);
   const [page,setPage]=useState(0),[blockPage,setBlockPage]=useState(0),[revision,setRevision]=useState(0);
@@ -29,18 +31,20 @@ export function BookingPanel({studioId,category,timezone,role}:{studioId:string;
     const startAt=localInstant(formDate+"T"+start,timezone),endAt=localInstant(formDate+"T"+end,timezone);
     if(form==="block")await command(base+"/booking-blocks",{scopeType:scope,staffId:scope==="STAFF"?staffId:null,startAt,endAt,reason:note});
     else if(editing)await command(base+"/bookings/"+editing.id,{staffId,startAt,endAt,note},"PUT");
+    else if(specialized)await command(base+"/lesson/private-bookings",{customerId,enrollmentCycleId:cycle,staffId,startAt,endAt,note});
     else await command(base+"/bookings",{customerId,staffId,bookingKind:category==="LESSON"?"LESSON_PRIVATE":"BEAUTY_SERVICE",startAt,endAt,note});
     setForm(null);setEditing(null);setDate(formDate);setPage(0);setBlockPage(0);setRevision(r=>r+1);setMessage("저장했습니다.");
   }catch(e){setError(e instanceof Error?e.message:"저장 실패");}finally{setBusy(false);}}
   async function action(path:string,method:"POST"|"DELETE"="POST"){setBusy(true);setError("");setMessage("");try{await command(base+path,{},method);setRevision(r=>r+1);setMessage("처리했습니다.");}catch(e){setError(e instanceof Error?e.message:"처리 실패");}finally{setBusy(false);}}
   function edit(b:Booking){setEditing(b);setFormDate(localValue(new Date(b.startAt),timezone).slice(0,10));setStaffId(b.staffId);setStart(localValue(new Date(b.startAt),timezone).slice(11));setEnd(localValue(new Date(b.endAt),timezone).slice(11));setNote(b.note??"");setForm("booking");}
-  return <section className="operations-panel"><h2>예약 캘린더</h2><p>사업장 시간대: {timezone}</p><p>수동 1:1 일정과 상태만 기록합니다. 별도 상품 연결이나 자동 정산은 수행하지 않습니다.</p>
+  return <section className="operations-panel"><h2>예약 캘린더</h2><p>사업장 시간대: {timezone}</p><p>{category==="LESSON"?"이용권에 연결된 레슨과 수동 일정을 함께 관리합니다. 수동 일정은 회차를 차감하지 않습니다.":"수동 1:1 일정과 상태를 기록합니다."}</p>
     <label>예약 날짜<input type="date" required value={date} onChange={e=>selectDate(e.target.value)}/></label>
     <div className="booking-week" aria-label="주간 날짜 선택">{Array.from({length:7},(_,i)=>addDays(date,i-3)).map(day=><button key={day} className={day===date?"button primary":"button"} aria-pressed={day===date} onClick={()=>selectDate(day)}>{day.slice(5)}</button>)}</div>
     {error && <p role="alert" className="auth-error">{error}</p>}{message && <p role="status">{message}</p>}
-    {canWrite && <div className="configuration-actions"><button className="button primary" disabled={busy} onClick={()=>{setFormDate(date);setForm("booking");setEditing(null);setNote("");}}>예약 만들기</button><button className="button" disabled={busy} onClick={()=>{setFormDate(date);setForm("block");setEditing(null);setNote("");}}>시간 차단</button></div>}
-    {form && canWrite && <form className="auth-form" onSubmit={submit}><h3>{form==="block"?"차단 설정":editing?"예약 변경":"수동 예약"}</h3>
+    {canWrite && <div className="configuration-actions"><button className="button primary" disabled={busy} onClick={()=>{setFormDate(date);setSpecialized(false);setForm("booking");setEditing(null);setNote("");}}>예약 만들기</button>{category==="LESSON"&&privateEnabled&&<button className="button primary" disabled={busy} onClick={()=>{setSpecialized(true);setFormDate(date);setForm("booking");setEditing(null);setNote("");}}>개인 레슨 예약</button>}<button className="button" disabled={busy} onClick={()=>{setFormDate(date);setForm("block");setEditing(null);setNote("");}}>시간 차단</button></div>}
+    {form && canWrite && <form className="auth-form" onSubmit={submit}><h3>{form==="block"?"차단 설정":editing?"예약 변경":specialized?"개인 레슨 예약":"수동 예약"}</h3>
       {form==="booking" && !editing && <CustomerPicker studioId={studioId} label={category==="LESSON"?"회원":"고객"} value={customerId} onChange={setCustomerId}/>}
+      {form==="booking" && !editing && specialized && <CyclePicker studioId={studioId} customerId={customerId} kind="PRIVATE" value={cycle} onChange={setCycle}/>}
       {editing && <p>{editing.customerName} · 고객 변경은 지원하지 않습니다.</p>}
       <label>일정 날짜<input type="date" required value={formDate} onChange={e=>setFormDate(e.target.value)}/></label>
       {form==="block" && <label>차단 범위<select aria-label="차단 범위" value={scope} onChange={e=>setScope(e.target.value)}><option value="STUDIO">사업장 전체</option><option value="STAFF">담당자</option></select></label>}
@@ -51,11 +55,11 @@ export function BookingPanel({studioId,category,timezone,role}:{studioId:string;
     </form>}
     <h3>당일 예약</h3>{!data?<p role="status">예약을 불러오고 있습니다.</p>:<>
       {data.items.length===0?<p>예약이 없습니다.</p>:<div className="booking-list">{data.items.map(b=><article className="booking-item" key={b.id}>
-        <h4>{b.customerName}</h4><p>{localValue(new Date(b.startAt),timezone).slice(11)}–{localValue(new Date(b.endAt),timezone).slice(11)} · {b.staffName}</p><p>{b.customerPhone} · <strong>{statuses[b.status]}</strong></p>
-        {b.note && <p>{b.note}</p>}{canWrite && <div className="configuration-actions">
-          {["PENDING","CONFIRMED"].includes(b.status) && <><button className="button" disabled={busy} onClick={()=>edit(b)}>변경</button><button className="button" disabled={busy} onClick={()=>void action(`/bookings/${b.id}/cancel`)}>예약 취소</button></>}
-          {b.status==="CONFIRMED" && <><button className="button" disabled={busy} onClick={()=>void action(`/bookings/${b.id}/complete`)}>완료 처리</button><button className="button" disabled={busy} onClick={()=>void action(`/bookings/${b.id}/no-show`)}>노쇼 처리</button></>}
-          {b.status==="PENDING" && <button className="button" disabled={busy} onClick={()=>void action(`/bookings/${b.id}/confirm`)}>예약 확정</button>}
+        <h4>{b.customerName}</h4><small>{b.manualEntry===false?"이용권 연결 수업":"수동 일정"}</small><p>{localValue(new Date(b.startAt),timezone).slice(11)}–{localValue(new Date(b.endAt),timezone).slice(11)} · {b.staffName}</p><p>{b.customerPhone} · <strong>{statuses[b.status]}</strong></p>
+        {b.note && <p>{b.note}</p>}{(canWrite || (b.manualEntry===false && b.bookingKind==="LESSON_PRIVATE")) && <div className="configuration-actions">
+          {canWrite && ["PENDING","CONFIRMED"].includes(b.status) && <>{b.bookingKind!=="LESSON_GROUP"&&<button className="button" disabled={busy} onClick={()=>edit(b)}>변경</button>}<button className="button" disabled={busy} onClick={()=>void action(`/bookings/${b.id}/cancel`)}>예약 취소</button></>}
+          {b.status==="CONFIRMED" && (b.bookingKind!=="LESSON_GROUP" || !attendanceEnabled) && <><button className="button" disabled={busy} onClick={()=>void action(`/bookings/${b.id}/complete`)}>완료 처리</button><button className="button" disabled={busy} onClick={()=>void action(`/bookings/${b.id}/no-show`)}>노쇼 처리</button></>}
+          {canWrite && b.status==="PENDING" && <button className="button" disabled={busy} onClick={()=>void action(`/bookings/${b.id}/confirm`)}>예약 확정</button>}
         </div>}
       </article>)}</div>}
       <div className="configuration-actions"><button className="button" disabled={page===0} onClick={()=>setPage(page-1)}>예약 이전 페이지</button><span>{page+1} / {Math.max(1,data.totalPages)}</span><button className="button" disabled={page+1>=data.totalPages} onClick={()=>setPage(page+1)}>예약 다음 페이지</button></div>

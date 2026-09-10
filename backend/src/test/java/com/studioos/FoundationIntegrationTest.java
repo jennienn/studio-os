@@ -60,7 +60,9 @@ class FoundationIntegrationTest {
                 .containsExactlyInAnyOrder("flyway_schema_history", "users", "auth_accounts", "studios",
                     "studio_memberships", "staff", "email_verification_tokens", "password_reset_tokens",
                     "studio_capabilities", "business_hours", "booking_policies", "lesson_policies", "beauty_policies", "customers",
-                    "payments", "payment_refunds", "idempotency_records", "bookings", "booking_blocks");
+                    "payments", "payment_refunds", "idempotency_records", "bookings", "booking_blocks", "pass_products", "classes", "enrollments",
+                    "enrollment_cycles", "pass_usage_ledger", "pass_entitlement_reservations", "lesson_booking_details",
+                    "lesson_cycle_payments", "class_schedules", "class_occurrences", "attendance");
     }
 
     @Test void redisAndServerSessionRoundTrip() {

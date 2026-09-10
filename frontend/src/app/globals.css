@@ -2383,3 +2383,6 @@ button:disabled {
   .configuration-summary dl { grid-template-columns: 1fr; gap: 6px; }
   .configuration-summary dd { margin-bottom: 12px; }
 }
+
+.lesson-month {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:12px 0;max-width:560px;}
+.lesson-month .button {padding:8px 2px;min-width:0;}
