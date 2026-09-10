@@ -336,3 +336,9 @@ full treatment memo
 ```
 
 Phone number는 필요 시 masking한다.
+
+## 19. Phase 2 Email Verification Gate
+
+Per ADR-049, pending EMAIL accounts cannot log in or create a Studio until verified.
+Verification does not create a login session. Verification instructions and resend are public,
+CSRF-protected and rate-limited. OAuth identities remain independent from EMAIL verification.

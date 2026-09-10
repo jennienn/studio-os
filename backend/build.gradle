@@ -31,3 +31,10 @@ dependencies {
 }
 
 tasks.named('test') { useJUnitPlatform() }
+
+tasks.register('browserTestServer', JavaExec) {
+    description = 'Run an isolated backend for repository Playwright tests.'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.studioos.BrowserTestServer'
+}

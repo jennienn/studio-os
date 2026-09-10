@@ -2316,3 +2316,24 @@ button:disabled {
 }
 
 .demo-banner { padding: 10px 20px; background: #f4f2ff; color: #51458b; text-align: center; font-size: 12px; }
+
+/* Real operator identity screens; independent from the visual demo store. */
+.auth-card { max-width: 460px; }
+.auth-form { display: grid; gap: 16px; margin: 24px 0; }
+.auth-form label, .workspace-content > label { display: grid; gap: 8px; font-weight: 600; }
+.auth-form input, .workspace-content select { width: 100%; min-width: 0; padding: 12px; border: 1px solid #dedbe8; border-radius: 10px; background: #fff; font: inherit; }
+.auth-form small, .auth-social small { color: #696477; line-height: 1.6; }
+.auth-social { display: grid; gap: 10px; margin: 20px 0; }
+.auth-social button:disabled, .auth-form button:disabled { opacity: .55; cursor: not-allowed; }
+.kakao-button { background: #fee500; color: #191919; }
+.auth-links { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; color: #6f47b8; }
+.auth-error { color: #a32842; line-height: 1.6; }
+.workspace-page { max-width: 1080px; padding: 24px; margin: auto; }
+.workspace-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 24px; border-bottom: 1px solid #ece9f2; }
+.workspace-header > div { display: flex; gap: 16px; align-items: center; }
+.workspace-content { max-width: 640px; margin: 40px auto; }
+.workspace-studio { margin: 24px 0; padding: 24px; border: 1px solid #e8e4ef; border-radius: 16px; background: #faf9fd; }
+.workspace-studio dl { display: grid; grid-template-columns: 100px 1fr; gap: 12px; }
+.workspace-studio dd { margin: 0; overflow-wrap: anywhere; }
+.workspace-content summary { cursor: pointer; padding: 16px 0; font-weight: 600; }
+@media (max-width: 480px) { .workspace-page { padding: 16px; } .workspace-header > div { gap: 8px; } }

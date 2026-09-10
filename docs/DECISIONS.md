@@ -1029,3 +1029,23 @@ If group attendance is recorded as `CANCELLED` because the booking/class partici
 After any NO_SHOW/ABSENT resolution, cycle terminal/expiration evaluation runs in the same transaction boundary so reservations cannot remain stranded.
 
 No-show penalty deductions outside the configured trigger are not supported in MVP. If a future product requires no-show consumption as its own policy, it requires a new Accepted decision and explicit deduction semantics.
+
+## ADR-049 — Email Verification Gate
+Status: Accepted
+
+Confirmed by the user during Phase 2 implementation: an EMAIL account must complete
+email verification before receiving an authenticated operator session or creating a Studio.
+Pending accounts may use the public verification instructions and resend flow only.
+A successful password check on a pending account returns an explicit verification-required result.
+Verification does not automatically log the user in. OAuth identity authentication remains separate;
+OAuth-only users may have no email and are not gated by an EMAIL account verification token.
+
+## ADR-050 — Phase 2 Pre-Onboarding Studio
+Status: Accepted
+
+The Phase 2 task explicitly permits Studio creation before Phase 3 business onboarding.
+Such a Studio has status `PRE_ONBOARDING`, with both `business_category` and
+`business_type` null. No category default or business capability is inferred.
+Studio, OWNER membership and the owner's default Staff are created in one transaction.
+This is an incomplete setup state, not completed business onboarding under ADR-001.
+Phase 3 owns the migration and validated transition to a configured category/subtype.

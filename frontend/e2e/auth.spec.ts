@@ -1,0 +1,63 @@
+import { expect, test } from "@playwright/test";
+import { readdir, readFile } from "node:fs/promises";
+import path from "node:path";
+async function mailLink(email:string,kind:string) {
+  const directory=path.resolve("../backend/.local-mail/e2e");
+  let url="";
+  await expect.poll(async()=> {
+    for (const file of await readdir(directory).catch(()=>[])) {
+      const item=JSON.parse(await readFile(path.join(directory,file),"utf8"));
+      if (item.to===email && item.kind===kind) url=item.url;
+    }
+    return url;
+  }).not.toBe("");
+  return url;
+}
+test("real signup, verification, session, studio, reset and logout",async({page},info)=> {
+  const email=`browser-${info.project.name}-${Date.now()}@example.test`;
+  const password="Browser safe password!";
+  await page.goto("/signup");
+  await expect(page.getByRole("button",{name:"Google로 로그인"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"카카오로 로그인"})).toBeVisible();
+  await page.getByLabel("이름",{exact:true}).fill("브라우저 운영자");
+  await page.getByLabel("이메일",{exact:true}).fill(email);
+  await page.getByLabel("비밀번호",{exact:true}).fill(password);
+  await page.getByRole("button",{name:"계정 만들기",exact:true}).click();
+  await expect(page).toHaveURL(/verification-pending/);
+  await page.goto(await mailLink(email,"VERIFY"));
+  await page.getByRole("button",{name:"이메일 인증",exact:true}).click();
+  await expect(page.getByRole("status")).toContainText("인증이 완료");
+  await page.getByRole("link",{name:"로그인으로 돌아가기"}).click();
+  await page.getByLabel("이메일",{exact:true}).fill(email);
+  await page.getByLabel("비밀번호",{exact:true}).fill(password);
+  await page.getByRole("button",{name:"로그인",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"내 사업장"})).toBeVisible();
+  await page.getByLabel("사업장 이름",{exact:true}).fill("내 테스트 사업장");
+  await page.getByLabel("사업장 주소",{exact:true}).fill(`browser-${info.project.name}-${Date.now()}`);
+  await page.getByLabel("시간대",{exact:true}).fill("Asia/Seoul");
+  await page.getByRole("button",{name:"사업장 만들기",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"내 테스트 사업장"})).toBeVisible();
+  await expect(page.getByText("소유자",{exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>localStorage.length)).toBe(0);
+  const cookies=await page.context().cookies();
+  const session=cookies.find(c=>c.name==="SESSION");
+  expect(session?.httpOnly).toBe(true); expect(session?.sameSite).toBe("Lax");
+  await page.goto("/forgot-password");
+  await page.getByLabel("이메일",{exact:true}).fill(email);
+  await page.getByRole("button",{name:"재설정 링크 받기"}).click();
+  await expect(page.getByRole("status")).toBeVisible();
+  await page.goto(await mailLink(email,"RESET"));
+  await page.getByLabel("비밀번호",{exact:true}).fill("Browser replacement password!");
+  await page.getByRole("button",{name:"새 비밀번호 설정"}).click();
+  await expect(page.getByRole("status")).toContainText("비밀번호가 변경");
+  await page.goto("/app");
+  await expect(page).toHaveURL(/login\?expired=1/);
+  await page.getByLabel("이메일",{exact:true}).fill(email);
+  await page.getByLabel("비밀번호",{exact:true}).fill("Browser replacement password!");
+  await page.getByRole("button",{name:"로그인",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"내 테스트 사업장"})).toBeVisible();
+  await page.getByRole("button",{name:"로그아웃"}).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goto("/app");
+  await expect(page).toHaveURL(/login\?expired=1/);
+});
