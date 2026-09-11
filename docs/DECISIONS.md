@@ -1136,6 +1136,13 @@ User-approved scope proceeds A products/enrollment → B cycles/ledger/renewal �
   product/enrollment/class administration, payments, refund, adjustment, arbitrary reschedule/cancel or memo access.
 - PassProduct price must be positive. Free passes, discounts and zero-price products are outside scope.
 
+Implementation hardening (Phase 7–8): successful idempotency replay rechecks current authentication,
+membership and required role/assignment before returning the stored result, while capability/category
+business validation applies to new execution. V10 adds tenant-scoped composite foreign keys for lesson
+semantic references. Attendance finalization rejects a superseded cancelled booking after rebooking.
+Because this phase creates lesson cycles only from confirmed payments, no reachable unpaid-cycle state
+or attendance payment-needed badge is implemented.
+
 ## ADR-054 — Group Rebooking and Instructor Occupancy
 Status: Accepted
 

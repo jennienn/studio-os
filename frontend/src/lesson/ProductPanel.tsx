@@ -4,8 +4,9 @@ import {api} from "@/auth/api";
 import {PageResult} from "@/operations/CustomerPanel";
 import {Product,triggers} from "./types";
 const empty={name:"",productType:"COUNT_BASED",totalCount:"",validityDays:"",validityStartRule:"FIRST_USE",price:"",deductionTrigger:"LESSON_COMPLETED",billingPeriod:"",active:true};
-export function ProductPanel({studioId}:{studioId:string}){
+export function ProductPanel({studioId,groupEnabled=false,attendanceEnabled=false}:{studioId:string;groupEnabled?:boolean;attendanceEnabled?:boolean}){
  const base=`/studios/${studioId}/lesson/pass-products`;
+ const attendanceAllowed=groupEnabled&&attendanceEnabled;
  const [data,setData]=useState<PageResult<Product>|null>(null),[page,setPage]=useState(0),[revision,setRevision]=useState(0);
  const [draft,setDraft]=useState(empty),[id,setId]=useState<string|null>(null),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState("");
  useEffect(()=>{let live=true;api<PageResult<Product>>(base+`?page=${page}`).then(d=>{if(live)setData(d);}).catch(e=>{if(live)setError(e.message);});return()=>{live=false;};},[base,page,revision]);
@@ -14,9 +15,9 @@ export function ProductPanel({studioId}:{studioId:string}){
  return <section className="operations-panel"><h2>이용권</h2><p>상품을 변경해도 기존 구매 이력과 차감 규칙은 유지됩니다.</p>{error&&<p role="alert">{error}</p>}
  <button className="button primary" onClick={()=>{setId(null);setDraft(empty);setOpen(true);}}>이용권 만들기</button>
  {open&&<form className="auth-form" onSubmit={save}><label>상품명<input required maxLength={100} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
- <label>상품 유형<select value={draft.productType} onChange={e=>setDraft({...draft,productType:e.target.value,validityStartRule:e.target.value==="TIME_BASED"?"PURCHASE_DATE":"FIRST_USE",billingPeriod:""})}><option value="COUNT_BASED">회차권</option><option value="TIME_BASED">기간권</option></select></label>
+ <label>상품 유형<select value={draft.productType} onChange={e=>setDraft({...draft,productType:e.target.value,validityStartRule:e.target.value==="TIME_BASED"?"PURCHASE_DATE":"FIRST_USE",deductionTrigger:e.target.value==="COUNT_BASED"?"LESSON_COMPLETED":"",billingPeriod:""})}><option value="COUNT_BASED">회차권</option><option value="TIME_BASED">기간권</option></select></label>
  {draft.productType==="COUNT_BASED"&&<><label>구매 회차<input type="number" min={1} max={2147483647} required value={draft.totalCount} onChange={e=>setDraft({...draft,totalCount:e.target.value})}/></label>
- <label>차감 시점<select value={draft.deductionTrigger} onChange={e=>setDraft({...draft,deductionTrigger:e.target.value})}>{Object.entries(triggers).map(([v,t])=><option key={v} value={v}>{t}</option>)}</select></label>
+ <label>차감 시점<select value={draft.deductionTrigger} onChange={e=>setDraft({...draft,deductionTrigger:e.target.value})}>{Object.entries(triggers).filter(([v])=>v!=="ATTENDANCE_PRESENT"||attendanceAllowed).map(([v,t])=><option key={v} value={v}>{t}</option>)}{draft.deductionTrigger==="ATTENDANCE_PRESENT"&&!attendanceAllowed&&<option value="ATTENDANCE_PRESENT" disabled>출석 (현재 설정에서 사용 불가)</option>}</select></label>
  <label>유효기간 시작<select value={draft.validityStartRule} onChange={e=>setDraft({...draft,validityStartRule:e.target.value})}><option value="FIRST_USE">첫 차감일</option><option value="PURCHASE_DATE">구매일</option></select></label></>}
  {draft.productType==="TIME_BASED"&&<label>기간 방식<select value={draft.billingPeriod} onChange={e=>setDraft({...draft,billingPeriod:e.target.value,validityDays:""})}><option value="">일수</option><option value="MONTH">한 달</option></select></label>}
  {!draft.billingPeriod&&<label>유효 일수{draft.productType==="COUNT_BASED"?" (선택)":""}<input type="number" min={1} max={2147483647} required={draft.productType==="TIME_BASED"} value={draft.validityDays} onChange={e=>setDraft({...draft,validityDays:e.target.value})}/></label>}

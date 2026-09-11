@@ -254,7 +254,7 @@ STAFF
 LessonBookingDetail
 - booking_id UUID PK/FK
 - studio_id UUID FK
-- enrollment_cycle_id UUID nullable FK
+- enrollment_cycle_id UUID FK
 - class_occurrence_id UUID nullable FK
 - lesson_mode
 ```
@@ -266,7 +266,9 @@ GROUP
 ```
 
 PRIVATE requires enrollment_cycle_id and no class_occurrence_id.
-GROUP requires class_occurrence_id.
+GROUP requires enrollment_cycle_id and class_occurrence_id.
+The database also enforces a tenant-scoped unique booking/cycle tuple so a reservation cannot
+refer to a different cycle than its `LessonBookingDetail`.
 
 ## 15. BeautyBookingDetail
 ```text
@@ -422,8 +424,10 @@ ClassOccurrence
 - studio_id UUID FK
 - class_id UUID FK
 - class_schedule_id UUID nullable FK
+- occurrence_date DATE
 - start_at TIMESTAMPTZ
 - end_at TIMESTAMPTZ
+- instructor_staff_id UUID nullable FK
 - capacity_snapshot
 - status
 ```
@@ -471,6 +475,7 @@ EnrollmentCycle
 - product_type_snapshot
 - purchased_count nullable
 - validity_days_snapshot nullable
+- billing_period_snapshot nullable
 - purchase_price_snapshot BIGINT
 - deduction_trigger_snapshot nullable
 - validity_start_rule_snapshot
@@ -494,15 +499,18 @@ CANCELLED
 Constraints:
 ```sql
 CREATE UNIQUE INDEX uq_enrollment_active_cycle
-ON enrollment_cycles (enrollment_id)
+ON enrollment_cycles (studio_id, enrollment_id)
 WHERE status = 'ACTIVE';
 
 CREATE UNIQUE INDEX uq_enrollment_scheduled_cycle
-ON enrollment_cycles (enrollment_id)
+ON enrollment_cycles (studio_id, enrollment_id)
 WHERE status = 'SCHEDULED';
 ```
 
 FIRST_USE cycle은 ACTIVE 상태에서도 start_date/valid_end_date가 null일 수 있다.
+TIME_BASED `billing_period_snapshot=MONTH`는 구매일 기준으로 계산한 28–31일의
+`validity_days_snapshot`을 함께 보존한다. V10 constraint가 다른 billing period나 잘못된
+resolved day count를 거부한다.
 
 ## 25. PassUsageLedger
 ```text
@@ -567,6 +575,8 @@ SUM(PassUsageLedger.amount) - ACTIVE reservation count
 ```
 
 동일 Booking은 entitlement reservation을 최대 하나만 가진다. Reservation consume과 ledger deduction은 같은 transaction에서 처리한다.
+Reservation의 `(studio_id, booking_id, enrollment_cycle_id)`는 동일
+`LessonBookingDetail` tuple을 참조해야 한다.
 
 ## 27. Attendance
 ```text
@@ -576,6 +586,7 @@ Attendance
 - class_occurrence_id UUID FK
 - customer_id UUID FK
 - enrollment_cycle_id UUID FK
+- booking_id UUID FK
 - status
 - recorded_at
 - recorded_by_user_id UUID
@@ -590,8 +601,12 @@ CANCELLED
 
 Unique:
 ```text
-(class_occurrence_id, customer_id)
+(studio_id, class_occurrence_id, customer_id)
+(studio_id, booking_id)
 ```
+
+Attendance의 booking/customer 및 booking/cycle/occurrence 조합은 각각 Booking과
+LessonBookingDetail의 동일 tenant context를 composite foreign key로 참조한다.
 
 ## 28. BeautyService
 ```text
@@ -724,7 +739,7 @@ COUNT_BASED expiration does not modify ledger rows merely to zero unused entitle
 
 ## Phase 7–8 accepted scope
 
-Phase 7–8 follows ADR-053: TIME_BASED period is exactly validityDays or MONTH, with historical resolved snapshot values. Termination preserves ledger credits. Finalized attendance cannot change to a different result. Schedule regeneration preserves every occurrence with booking history.
+Phase 7–8 follows ADR-053: TIME_BASED period is exactly validityDays or MONTH, with historical resolved snapshot values. Termination preserves ledger credits. Finalized attendance cannot change to a different result. Schedule regeneration preserves every occurrence with booking history. V10 adds composite semantic-reference constraints across reservations, lesson booking details, occurrences/schedules and attendance/bookings.
 
 `LessonCyclePayment` is a tenant-scoped association between one `EnrollmentCycle` and its one
 confirmed `Payment`. It lets the existing refund transaction find and cancel the exact cycle without

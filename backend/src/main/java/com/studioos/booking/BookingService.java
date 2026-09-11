@@ -52,7 +52,7 @@ public class BookingService {
         var actor=access.member(studio);studios.lockById(studio).orElseThrow();var current=find(studio,id);
         if(current.manualEntry)access.manager(studio);else specialization(current).authorize(current,actor,command);
         return idempotency.execute(actor,command+"_BOOKING",key,id,200,View.class,()->{
-            var booking=find(studio,id);BookingTransitions.apply(booking,command);studios.flush();
+            var booking=find(studio,id);if(!booking.manualEntry)specialization(booking).validateTransition(booking,actor,command);BookingTransitions.apply(booking,command);studios.flush();
             if(!booking.manualEntry)specialization(booking).afterTransition(booking,actor,command);
             studios.flush();return view(booking,actor.membershipRole()==StudioMembership.Role.STAFF);
         });

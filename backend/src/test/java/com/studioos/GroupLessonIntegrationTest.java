@@ -25,6 +25,22 @@ class GroupLessonIntegrationTest extends LessonTestBase {
   String bad="{\"entries\":[{\"bookingId\":\""+b+"\",\"status\":\"PRESENT\"},{\"bookingId\":\""+UUID.randomUUID()+"\",\"status\":\"ABSENT\"}]}";
   call(f.user(),put(f.base()+"/lesson/occurrences/"+o+"/attendance").header("Idempotency-Key","bulk").content(bad)).andExpect(status().isNotFound());assertThat(balance(f,a)).isEqualTo(2);
   assertThat(jdbc.queryForObject("select count(*) from attendance where studio_id=?",Integer.class,f.studio())).isZero();
+  assertThat(jdbc.queryForObject("select status from bookings where studio_id=? and id=?",String.class,f.studio(),b)).isEqualTo("CONFIRMED");
+  assertThat(jdbc.queryForObject("select status from pass_entitlement_reservations where studio_id=? and booking_id=?",String.class,f.studio(),b)).isEqualTo("ACTIVE");
+  assertThat(jdbc.queryForObject("select count(*) from pass_usage_ledger where studio_id=? and enrollment_cycle_id=? and event_type<>'PURCHASE'",Integer.class,f.studio(),a.cycle())).isZero();
+ }
+ @Test void staleCancelledBookingCannotFinalizeAttendanceAfterRebooking() throws Exception{
+  var f=fixture();var c=clazz(f);var o=occurrence(f,c);var l=lesson(f,"ATTENDANCE_PRESENT",2,c);var old=groupBook(f,l,o);
+  call(f.user(),post(path(f,old,"cancel")).header("Idempotency-Key","cancel-old")).andExpect(status().isOk());var current=groupBook(f,l,o);String attendance=f.base()+"/lesson/occurrences/"+o+"/attendance";
+  jdbc.update("update bookings set created_at=timestamp with time zone '2030-01-01 00:00:00+00' where studio_id=? and id in (?,?)",f.studio(),old,current);
+  assertThat(json(call(f.user(),get(attendance))).get(0).get("bookingId").asText()).isEqualTo(current.toString());
+  call(f.user(),put(attendance).header("Idempotency-Key","stale").content(mark(old,"CANCELLED"))).andExpect(status().isConflict());
+  assertThat(jdbc.queryForObject("select count(*) from attendance where studio_id=? and class_occurrence_id=?",Integer.class,f.studio(),o)).isZero();
+  assertThat(jdbc.queryForObject("select status from bookings where studio_id=? and id=?",String.class,f.studio(),current)).isEqualTo("CONFIRMED");
+  assertThat(jdbc.queryForObject("select status from pass_entitlement_reservations where studio_id=? and booking_id=?",String.class,f.studio(),current)).isEqualTo("ACTIVE");
+  call(f.user(),put(attendance).header("Idempotency-Key","current").content(mark(current,"PRESENT"))).andExpect(status().isOk());
+  call(f.user(),put(attendance).header("Idempotency-Key","current-again").content(mark(current,"PRESENT"))).andExpect(status().isOk());
+  assertThat(balance(f,l)).isEqualTo(1);assertThat(jdbc.queryForObject("select status from pass_entitlement_reservations where studio_id=? and booking_id=?",String.class,f.studio(),current)).isEqualTo("CONSUMED");
  }
  @Test void bookedScheduleIsPreservedAndWrongInstructorCannotAttend() throws Exception{
   var f=fixture();var c=clazz(f);var o=occurrence(f,c);var a=lesson(f,"BOOKING_CONFIRMED",2,c);var b=groupBook(f,a,o);

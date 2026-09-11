@@ -140,7 +140,7 @@ cd backend
 ```
 
 They cover Spring context startup, PostgreSQL connectivity, Flyway validation and
-the exact Phase 6 schema, Redis/session round-trip, public health privacy, authentication,
+the current schema through the Phase 7–8 V10 integrity migration, Redis/session round-trip, public health privacy, authentication,
 token expiry/replay, session revocation, OAuth identity isolation, CSRF, tenant authorization
 and atomic Studio creation/onboarding, configuration role restrictions, category dependencies
 and concurrent configuration writes. Operational tests cover customer archival, payment state

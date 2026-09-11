@@ -17,6 +17,11 @@ it("creates arbitrary counts and edits product without fixed presets",async()=>{
  await waitFor(()=>expect(api).toHaveBeenCalledWith("/studios/s/lesson/pass-products",expect.objectContaining({totalCount:15,price:"12345"}),"POST"));
  fireEvent.click(await screen.findByRole("button",{name:"상품 수정"}));fireEvent.click(screen.getByLabelText("판매 활성"));fireEvent.click(screen.getByRole("button",{name:"상품 저장"}));await waitFor(()=>expect(api).toHaveBeenCalledWith("/studios/s/lesson/pass-products/p",expect.objectContaining({active:false}),"PUT"));
 });
+it("offers attendance deduction only when group and attendance capabilities are both enabled",async()=>{
+ vi.mocked(api).mockResolvedValue({items:[],totalPages:1});const hidden=render(<ProductPanel studioId="s" groupEnabled attendanceEnabled={false}/>);fireEvent.click(await screen.findByRole("button",{name:"이용권 만들기"}));
+ expect(screen.queryByRole("option",{name:"출석"})).not.toBeInTheDocument();hidden.unmount();
+ render(<ProductPanel studioId="s" groupEnabled attendanceEnabled/>);fireEvent.click(await screen.findByRole("button",{name:"이용권 만들기"}));expect(screen.getByRole("option",{name:"출석"})).toBeInTheDocument();
+});
 function enrollmentReads(){vi.mocked(api).mockImplementation(async(path,body)=>{
  if(body)return path.endsWith("renew")?cycle:{id:"e"};if(path.includes("pass-products"))return {items:[product],totalPages:1};if(path.endsWith("/cycles"))return [cycle,{...cycle,id:"old",status:"EXPIRED",productName:"Previous"}];return {items:[{id:"e",kind:"PRIVATE",status:"ACTIVE"}],totalPages:1};
 });}
@@ -29,6 +34,13 @@ it("adds enrollment and records renewal through separate explicit payment confir
 it("renders cycle snapshots and ledger-derived available balance",async()=>{
  enrollmentReads();render(<EnrollmentPanel studioId="s" customerId="customer" role="MANAGER" groupEnabled={false}/>);await screen.findByRole("option",{name:/개인 · 진행/});fireEvent.change(screen.getByLabelText("수강 이력"),{target:{value:"e"}});
  await screen.findByText("Previous · 만료");expect(screen.getAllByText("구매 7회 · 잔여 6회 · 예약 중 1회 · 예약 가능 5회")).toHaveLength(2);expect(screen.queryByLabelText("회차 조정")).not.toBeInTheDocument();
+});
+it("filters renewal products by the selected enrollment mode",async()=>{
+ const attendance={...product,id:"attendance",name:"Attendance pass",deductionTrigger:"ATTENDANCE_PRESENT"};const completion={...product,id:"completion",name:"Completion pass",deductionTrigger:"LESSON_COMPLETED"};
+ vi.mocked(api).mockImplementation(async path=>path.includes("pass-products")?{items:[attendance,completion],totalPages:1}:path.includes("/cycles")?[]:{items:[{id:"private",kind:"PRIVATE",status:"ACTIVE"},{id:"group",kind:"GROUP",status:"ACTIVE"}],totalPages:1});
+ render(<EnrollmentPanel studioId="s" customerId="customer" role="OWNER" groupEnabled/>);await screen.findByRole("option",{name:/개인 · 진행/});fireEvent.change(screen.getByLabelText("수강 이력"),{target:{value:"private"}});
+ expect(await screen.findByRole("option",{name:/Completion pass/})).toBeInTheDocument();expect(screen.queryByRole("option",{name:/Attendance pass/})).not.toBeInTheDocument();
+ fireEvent.change(screen.getByLabelText("수강 이력"),{target:{value:"group"}});expect(await screen.findByRole("option",{name:/Attendance pass/})).toBeInTheDocument();expect(screen.queryByRole("option",{name:/Completion pass/})).not.toBeInTheDocument();
 });
 it("private pass picker excludes scheduled and wrong-kind enrollments",async()=>{
  vi.mocked(api).mockImplementation(async path=>path.includes("enrollments?")?{items:[{id:"e",kind:"PRIVATE",status:"ACTIVE"},{id:"g",kind:"GROUP",status:"ACTIVE"}],totalPages:1}:[cycle,{...cycle,id:"next",status:"SCHEDULED",productName:"Next"}]);render(<CyclePicker studioId="s" customerId="customer" kind="PRIVATE" value="" onChange={vi.fn()}/>);
@@ -46,4 +58,5 @@ it("bulk attendance submits selected members with explicit PRESENT",async()=>{
 });
 function config(category:string){return {studioId:"s",status:"ACTIVE",businessCategory:category,businessType:category==="LESSON"?"DANCE":"NAIL",configuration:{capabilities:{PRIVATE_LESSON:true,GROUP_CLASS:true,ATTENDANCE:true},businessHours:[],bookingPolicy:{},lessonPolicy:{},beautyPolicy:null},permissions:{editPolicies:true},catalog:{},bookingDefaults:{}};}
 it("lesson navigation exposes products and attendance",async()=>{vi.mocked(api).mockResolvedValue(config("LESSON"));render(<ConfigurationPanel studioId="s" mode="bookings" onComplete={vi.fn()}/>);expect(await screen.findByRole("link",{name:"이용권"})).toBeInTheDocument();expect(screen.getByRole("link",{name:"출석"})).toBeInTheDocument();});
+it("hides and denies attendance when group capability is disabled",async()=>{const disabled=config("LESSON");disabled.configuration.capabilities.GROUP_CLASS=false;vi.mocked(api).mockResolvedValue(disabled);render(<ConfigurationPanel studioId="s" mode="lesson-attendance" target="LESSON" onComplete={vi.fn()}><p>Attendance content</p></ConfigurationPanel>);expect(await screen.findByRole("alert")).toHaveTextContent("접근할 수 없습니다");expect(screen.queryByText("Attendance content")).not.toBeInTheDocument();expect(screen.queryByRole("link",{name:"출석"})).not.toBeInTheDocument();});
 it("beauty direct lesson route redirects without rendering lesson children",async()=>{vi.mocked(api).mockResolvedValue(config("BEAUTY"));render(<ConfigurationPanel studioId="s" mode="lesson-products" target="LESSON" onComplete={vi.fn()}><p>Secret lesson content</p></ConfigurationPanel>);await waitFor(()=>expect(router.replace).toHaveBeenCalledWith("/app"));expect(screen.queryByText("Secret lesson content")).not.toBeInTheDocument();});

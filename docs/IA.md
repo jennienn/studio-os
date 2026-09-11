@@ -125,3 +125,9 @@ OWNER/MANAGER LESSON navigation adds:
 history. STAFF does not receive product/enrollment/class administration routes; assigned lesson
 outcomes remain available only through the permitted operation screen. BEAUTY navigation does not
 expose any of these LESSON routes.
+
+The attendance route and navigation entry require both `GROUP_CLASS` and `ATTENDANCE`. Pass-product
+forms offer `ATTENDANCE_PRESENT` only under the same capability combination, and renewal selectors
+filter deduction triggers that are incompatible with the selected PRIVATE/GROUP enrollment.
+The attendance screen shows confirmed cycle entitlement only; it has no payment-needed badge because
+Phase 7–8 has no reachable unpaid lesson-cycle state.

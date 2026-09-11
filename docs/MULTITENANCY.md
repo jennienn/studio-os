@@ -29,6 +29,8 @@ PassProduct
 Enrollment
 EnrollmentCycle
 PassUsageLedger
+PassEntitlementReservation
+LessonCyclePayment
 Class
 ClassSchedule
 ClassOccurrence
@@ -189,6 +191,11 @@ client가 별도 studioId/customerId를 보내더라도 session scope와 다르�
 ## 12. EnrollmentCycle
 
 EnrollmentCycle은 반드시 explicit `studio_id`를 가진다.
+
+`LessonBookingDetail`, `PassEntitlementReservation`, `ClassOccurrence`, `Attendance`와
+`LessonCyclePayment`의 cross-aggregate references는 `studio_id`를 포함한 composite foreign
+key로 연결한다. Application tenant predicates뿐 아니라 PostgreSQL도 서로 다른 tenant 또는
+서로 다른 booking/cycle/customer/class context의 조합을 거부한다.
 
 ---
 

@@ -31,8 +31,9 @@ public class CycleService implements PaymentRefundEffect {
  }
  @Transactional(readOnly=true) public List<View> list(UUID studio,UUID enrollment){access.manager(studio);enrollments.find(studio,enrollment);return cycles.findByStudioIdAndEnrollmentIdOrderByCreatedAtDesc(studio,enrollment).stream().map(this::view).toList();}
  @Transactional(readOnly=true) public List<LessonLedger.Entry> history(UUID studio,UUID cycle,int page,int size){access.manager(studio);find(studio,cycle);PageResult.validate(page,size);return ledger.history(studio,cycle,page,size);}
- @Transactional public View purchase(UUID studio,UUID enrollment,String key,Purchase body){var actor=access.lock(studio);
+ @Transactional public View purchase(UUID studio,UUID enrollment,String key,Purchase body){var actor=access.authorizedLock(studio);
   return idem.execute(actor,"RENEW_ENROLLMENT",key,Map.of("enrollment",enrollment,"body",body),201,View.class,()->{
+   access.lesson(studio);
    var e=enrollments.find(studio,enrollment);if(!e.status.equals("ACTIVE"))conflict("종료된 수강입니다.");
    if(!customers.findByStudioIdAndId(studio,e.customerId).orElseThrow().status.equals("ACTIVE"))conflict("보관 회원은 결제할 수 없습니다.");
    var p=products.find(studio,body.passProductId());if(!p.active)conflict("비활성 이용권입니다.");access.mode(studio,e.kind,p.deductionTrigger);
@@ -53,16 +54,18 @@ public class CycleService implements PaymentRefundEffect {
    return view(c);
   });
  }
- @Transactional public View adjust(UUID studio,UUID cycle,String key,Adjustment body){var actor=access.lock(studio);actor.requireOwner();
+ @Transactional public View adjust(UUID studio,UUID cycle,String key,Adjustment body){var actor=access.authorizedLock(studio);actor.requireOwner();
   return idem.execute(actor,"ADJUST_LESSON_CYCLE",key,Map.of("cycle",cycle,"body",body),200,View.class,()->{
+   access.lesson(studio);
    var c=find(studio,cycle);if(!c.productTypeSnapshot.equals("COUNT_BASED")||body.amount()==0)conflict("회차권에 0이 아닌 조정값을 입력해 주세요.");
    if(ledger.balance(studio,cycle)+(long)body.amount()<ledger.reserved(studio,cycle))conflict("예약된 회차보다 잔액을 줄일 수 없습니다.");
    ledger.append(studio,cycle,"MANUAL_ADJUSTMENT",body.amount(),body.reason().trim(),"ADJUSTMENT",UUID.randomUUID(),actor.authenticatedUserId());
    settle(c,today(studio));return view(c);
   });
  }
- @Transactional public EnrollmentService.View end(UUID studio,UUID enrollment,String key){var actor=access.lock(studio);
+ @Transactional public EnrollmentService.View end(UUID studio,UUID enrollment,String key){var actor=access.authorizedLock(studio);
   return idem.execute(actor,"END_ENROLLMENT",key,enrollment,200,EnrollmentService.View.class,()->{
+   access.lesson(studio);
    var e=enrollments.find(studio,enrollment);var all=cycles.findByStudioIdAndEnrollmentIdOrderByCreatedAtDesc(studio,enrollment);
    if(all.stream().anyMatch(c->ledger.outstanding(studio,c.id)))conflict("미해결 예약을 먼저 처리해 주세요.");
    e.status="ENDED";e.endedAt=e.endedAt==null?Instant.now():e.endedAt;

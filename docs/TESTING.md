@@ -82,7 +82,7 @@ LESSON MVP에서 확인:
 - 회차 차감/취소 복구
 - 단체 출석
 - 재등록 cycle history
-- 결제 필요 상태
+- 결제 확인 후 cycle 생성과 미결제 cycle 부재
 
 ## 7. Phase 3 verification scope
 
@@ -120,10 +120,19 @@ FIRST_USE windows, termination/refund guards, selective occurrence regeneration,
 deduction/restore, group capacity and attendance. Cross-tenant references and OWNER/MANAGER/STAFF
 assignment rules are exercised through the Spring Security filter chain.
 
+Integrity tests also exercise V10 composite foreign keys for reservation-cycle, occurrence-schedule/
+class and attendance booking/customer/cycle/occurrence relationships, plus TIME_BASED resolved period
+checks. Attendance regressions reject stale cancelled bookings after rebooking and prove bulk rollback
+across attendance, Booking, reservation and ledger state. Exact successful command replay is verified
+after capability disable, while changed-payload reuse remains a conflict.
+
 Concurrency tests cover same-key and different-key private completion, group capacity races,
 duplicate member booking, attendance replay, renewal races, schedule-update versus booking and
 termination versus booking. Each write uses PostgreSQL transactions and the documented Studio or
 occurrence row lock; Redis remains session storage rather than business source of truth.
+
+Additional races cover refund versus booking/completion, final entitlement, duplicate customer group
+booking, expiration/successor activation and generation of an actually missing horizon occurrence.
 
 Frontend tests cover capability-based LESSON navigation, pass/enrollment/class/attendance panels,
 private eligibility selection and category isolation. Playwright runs the integrated LESSON product

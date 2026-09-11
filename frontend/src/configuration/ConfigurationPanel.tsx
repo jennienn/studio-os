@@ -57,7 +57,7 @@ export function ConfigurationPanel({studioId,mode,target=null,onComplete,childre
   if(mode==="onboarding" && !view.permissions.completeOnboarding) return <p>소유자가 사업장 온보딩을 완료해야 합니다.</p>;
   const content=typeof children==="function"?children(view):children;
   const lessonMode=mode.startsWith("lesson-");
-  const lessonAllowed=view.businessCategory==="LESSON" && (mode==="lesson-attendance"?view.configuration?.capabilities.GROUP_CLASS:view.permissions.editPolicies && (mode!=="lesson-classes"||view.configuration?.capabilities.GROUP_CLASS));
+  const lessonAllowed=view.businessCategory==="LESSON" && (mode==="lesson-attendance"?view.configuration?.capabilities.GROUP_CLASS&&view.configuration?.capabilities.ATTENDANCE:view.permissions.editPolicies && (mode!=="lesson-classes"||view.configuration?.capabilities.GROUP_CLASS));
   const sections=["type","capabilities","hours","policies"] as const;
   return <section className="configuration-panel">
     {view.status==="ACTIVE" && <>
@@ -68,7 +68,7 @@ export function ConfigurationPanel({studioId,mode,target=null,onComplete,childre
         <Link href="/app/bookings" aria-current={mode==="bookings"?"page":undefined}>{view.businessCategory==="LESSON"?"수업 일정":"예약"}</Link>
         {view.businessCategory==="LESSON" && <>
           {view.permissions.editPolicies && <><Link href="/app/lesson/pass-products">이용권</Link><Link href="/app/lesson/enrollments">결제 / 재등록</Link></>}
-          {view.configuration?.capabilities.GROUP_CLASS && <>{view.permissions.editPolicies && <Link href="/app/lesson/classes">그룹 수업</Link>}<Link href="/app/lesson/attendance">{view.configuration?.capabilities.ATTENDANCE?"출석":"그룹 일정"}</Link></>}
+          {view.configuration?.capabilities.GROUP_CLASS && view.permissions.editPolicies && <Link href="/app/lesson/classes">그룹 수업</Link>}{view.configuration?.capabilities.GROUP_CLASS&&view.configuration?.capabilities.ATTENDANCE&&<Link href="/app/lesson/attendance">출석</Link>}
         </>}
         <Link href="/app/settings" aria-current={mode==="settings"?"page":undefined}>설정</Link></nav>
     </>}

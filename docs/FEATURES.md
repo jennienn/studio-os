@@ -162,10 +162,14 @@ name + phone
 - attendance list
 - individual/bulk attendance
 - remaining pass display
-- payment-needed indicator
+- remaining/available entitlement indicator
 - attendance history
 - trigger-dependent deduction
 - duplicate deduction prevention
+
+Phase 7–8 creates a cycle only after payment is confirmed and does not model an unpaid lesson-cycle
+state. Therefore the attendance screen does not show a payment-needed badge; that UI is deferred
+until an Accepted flow defines a reachable unpaid state and transition.
 
 ## 13. LESSON — Renewal — MVP
 - payment-confirmed renewal

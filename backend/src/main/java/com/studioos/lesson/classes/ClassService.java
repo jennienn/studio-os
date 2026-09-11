@@ -29,7 +29,8 @@ public class ClassService {
  private static final String OCC="select o.*,c.name class_name,(select count(*) from lesson_booking_details d join bookings b on b.studio_id=d.studio_id and b.id=d.booking_id where d.studio_id=o.studio_id and d.class_occurrence_id=o.id and b.status in ('PENDING','CONFIRMED')) booked_count from class_occurrences o join classes c on c.studio_id=o.studio_id and c.id=o.class_id ";
  public ClassView find(UUID studio,UUID id){return jdbc.query("select * from classes where studio_id=? and id=?",classMapper,studio,id).stream().findFirst().orElseThrow(ClassService::missing);}
  @Transactional(readOnly=true) public List<ClassView> list(UUID studio,int page,int size){var a=access.member(studio);PageResult.validate(page,size);UUID own=ownStaff(a);return jdbc.query("select * from classes where studio_id=? and (?::uuid is null or instructor_staff_id=?) order by name,id limit ? offset ?",classMapper,studio,own,own,size,(long)page*size);}
- @Transactional public ClassView save(UUID studio,UUID id,String key,Edit body){var a=access.lock(studio);access.capability(studio,"GROUP_CLASS");return idem.execute(a,"SAVE_CLASS",key,Map.of("id",id==null?"new":id.toString(),"body",body),id==null?201:200,ClassView.class,()->{
+ @Transactional public ClassView save(UUID studio,UUID id,String key,Edit body){var a=access.authorizedLock(studio);return idem.execute(a,"SAVE_CLASS",key,Map.of("id",id==null?"new":id.toString(),"body",body),id==null?201:200,ClassView.class,()->{
+  access.lesson(studio);access.capability(studio,"GROUP_CLASS");
   if(body.instructorStaffId()!=null)availability.staff(studio,body.instructorStaffId());
   UUID target=id==null?UUID.randomUUID():find(studio,id).id();
   if(id==null)jdbc.update("insert into classes(id,studio_id,name,capacity,instructor_staff_id,active,created_at) values (?,?,?,?,?,?,now())",target,studio,body.name().trim(),body.capacity(),body.instructorStaffId(),body.active());
@@ -37,7 +38,8 @@ public class ClassService {
   return find(studio,target);
  });}
  @Transactional(readOnly=true) public List<Schedule> schedules(UUID studio,UUID clazz){access.manager(studio);find(studio,clazz);return jdbc.query("select * from class_schedules where studio_id=? and class_id=? order by weekday,start_time,id",scheduleMapper,studio,clazz);}
- @Transactional public Schedule schedule(UUID studio,UUID clazz,UUID id,String key,ScheduleEdit body){var a=access.lock(studio);access.capability(studio,"GROUP_CLASS");return idem.execute(a,"SAVE_CLASS_SCHEDULE",key,Map.of("class",clazz,"id",id==null?"new":id.toString(),"body",body),id==null?201:200,Schedule.class,()->{
+ @Transactional public Schedule schedule(UUID studio,UUID clazz,UUID id,String key,ScheduleEdit body){var a=access.authorizedLock(studio);return idem.execute(a,"SAVE_CLASS_SCHEDULE",key,Map.of("class",clazz,"id",id==null?"new":id.toString(),"body",body),id==null?201:200,Schedule.class,()->{
+  access.lesson(studio);access.capability(studio,"GROUP_CLASS");
   if(!find(studio,clazz).active())conflict("비활성 반입니다.");UUID target=id==null?UUID.randomUUID():id;
   if(id==null)jdbc.update("insert into class_schedules(id,studio_id,class_id,weekday,start_time,duration_minutes,active) values (?,?,?,?,?,?,?)",target,studio,clazz,body.weekday(),body.startTime(),body.durationMinutes(),body.active());
   else if(jdbc.update("update class_schedules set weekday=?,start_time=?,duration_minutes=?,active=? where studio_id=? and class_id=? and id=?",body.weekday(),body.startTime(),body.durationMinutes(),body.active(),studio,clazz,id)!=1)throw missing();
@@ -68,7 +70,7 @@ public class ClassService {
  public Occurrence occurrence(UUID studio,UUID id){return jdbc.query(OCC+"where o.studio_id=? and o.id=?",occurrenceMapper,studio,id).stream().findFirst().orElseThrow(ClassService::missing);}
  public void assigned(AuthorizedStudioContext actor,Occurrence o){UUID own=ownStaff(actor);if(own!=null&&!own.equals(o.instructorStaffId()))throw new ApiException(403,"INSTRUCTOR_REQUIRED","담당 강사만 처리할 수 있습니다.");}
  public void lockOccurrence(UUID studio,UUID id){if(jdbc.queryForList("select id from class_occurrences where studio_id=? and id=? for update",UUID.class,studio,id).isEmpty())throw missing();}
- @Transactional public Occurrence complete(UUID studio,UUID id,String key){var actor=access.lock(studio);return idem.execute(actor,"COMPLETE_OCCURRENCE",key,id,200,Occurrence.class,()->{lockOccurrence(studio,id);var o=occurrence(studio,id);if(o.status().equals("CANCELLED")||o.bookedCount()>0)conflict("모든 예약을 먼저 처리해 주세요.");jdbc.update("update class_occurrences set status='COMPLETED' where studio_id=? and id=?",studio,id);return occurrence(studio,id);});}
+ @Transactional public Occurrence complete(UUID studio,UUID id,String key){var actor=access.authorizedLock(studio);return idem.execute(actor,"COMPLETE_OCCURRENCE",key,id,200,Occurrence.class,()->{access.lesson(studio);lockOccurrence(studio,id);var o=occurrence(studio,id);if(o.status().equals("CANCELLED")||o.bookedCount()>0)conflict("모든 예약을 먼저 처리해 주세요.");jdbc.update("update class_occurrences set status='COMPLETED' where studio_id=? and id=?",studio,id);return occurrence(studio,id);});}
  private UUID ownStaff(AuthorizedStudioContext a){if(a.membershipRole()!=StudioMembership.Role.STAFF)return null;return staff.findByStudioIdAndUserId(a.authorizedStudioId(),a.authenticatedUserId()).filter(s->s.active).orElseThrow(()->new ApiException(403,"STAFF_REQUIRED","담당자 정보가 필요합니다.")).id;}
  private static ApiException missing(){return new ApiException(404,"CLASS_NOT_FOUND","수업 정보를 찾을 수 없습니다.");}
  private static void conflict(String message){throw new ApiException(409,"CLASS_CONFLICT",message);}

@@ -63,6 +63,7 @@ class FoundationIntegrationTest {
                     "payments", "payment_refunds", "idempotency_records", "bookings", "booking_blocks", "pass_products", "classes", "enrollments",
                     "enrollment_cycles", "pass_usage_ledger", "pass_entitlement_reservations", "lesson_booking_details",
                     "lesson_cycle_payments", "class_schedules", "class_occurrences", "attendance");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("10");
     }
 
     @Test void redisAndServerSessionRoundTrip() {

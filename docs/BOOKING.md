@@ -622,3 +622,7 @@ schedule/date prevents duplicate generation for that date. Occurrences snapshot 
 class edits govern newly generated instances. The hourly in-process maintenance job uses separate
 Studio-locked transactions for expiry and each schedule. Invalid generation rolls back that schedule
 and emits a sanitized review warning; unrelated schedules continue. No external scheduler is required.
+
+After a cancellation and rebooking for the same occurrence/customer, attendance may be finalized only
+against the newest booking history row. A stale cancelled booking cannot create the immutable attendance
+record or release/consume the current booking's entitlement reservation.

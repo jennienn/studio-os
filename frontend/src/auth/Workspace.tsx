@@ -61,7 +61,7 @@ export function Workspace({mode="home",target=null,resourceId}:{mode?:WorkspaceM
       {active && !busy && <ConfigurationPanel key={active.id} studioId={active.id} mode={mode} target={target} onComplete={load}>{view=><>
         {mode==="customers" && <CustomerPanel key={active.id+resourceId} studioId={active.id} category={active.businessCategory} id={resourceId}/>}
         {mode==="customers" && resourceId && resourceId!=="new" && active.businessCategory==="LESSON" && active.role!=="STAFF" && <EnrollmentPanel key={active.id+resourceId+"lesson"} studioId={active.id} customerId={resourceId} role={active.role} groupEnabled={!!view.configuration?.capabilities.GROUP_CLASS}/>}
-        {mode==="lesson-products" && <ProductPanel studioId={active.id}/>}
+        {mode==="lesson-products" && <ProductPanel studioId={active.id} groupEnabled={!!view.configuration?.capabilities.GROUP_CLASS} attendanceEnabled={!!view.configuration?.capabilities.ATTENDANCE}/>}
         {mode==="lesson-enrollments" && <EnrollmentPanel studioId={active.id} role={active.role} groupEnabled={!!view.configuration?.capabilities.GROUP_CLASS}/>}
         {mode==="lesson-classes" && <ClassPanel studioId={active.id}/>}
         {mode==="lesson-attendance" && <AttendancePanel studioId={active.id} timezone={active.timezone} role={active.role} attendanceEnabled={!!view.configuration?.capabilities.ATTENDANCE}/>}

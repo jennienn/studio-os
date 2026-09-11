@@ -19,7 +19,8 @@ public class EnrollmentService {
  public EnrollmentService(EnrollmentRepository enrollments,CustomerRepository customers,LessonAccess access,IdempotencyService idem,JdbcTemplate jdbc){this.enrollments=enrollments;this.customers=customers;this.access=access;this.idem=idem;this.jdbc=jdbc;}
  @Transactional(readOnly=true) public PageResult<View> list(UUID studio,UUID customer,int page,int size){access.manager(studio);PageResult.validate(page,size);return PageResult.from(enrollments.list(studio,customer,PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,"createdAt","id"))).map(EnrollmentService::view));}
  @Transactional(readOnly=true) public View get(UUID studio,UUID id){access.manager(studio);return view(find(studio,id));}
- @Transactional public View create(UUID studio,String key,Create body){var actor=access.lock(studio);return idem.execute(actor,"CREATE_ENROLLMENT",key,body,201,View.class,()->{
+ @Transactional public View create(UUID studio,String key,Create body){var actor=access.authorizedLock(studio);return idem.execute(actor,"CREATE_ENROLLMENT",key,body,201,View.class,()->{
+  access.lesson(studio);
   access.mode(studio,body.kind().name(),null);
   var c=customers.findByStudioIdAndId(studio,body.customerId()).orElseThrow(()->new ApiException(404,"CUSTOMER_NOT_FOUND","회원을 찾을 수 없습니다."));
   if(!c.status.equals("ACTIVE"))throw new ApiException(409,"CUSTOMER_ARCHIVED","보관 회원은 새 수강을 등록할 수 없습니다.");
